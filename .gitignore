@@ -10,7 +10,8 @@ results/
 datasets/
 # C extensions
 *.so
-
+*.png
+*.jpg
 # Distribution / packaging
 .Python
 build/
