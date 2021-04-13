@@ -14,4 +14,4 @@ evaluation = CaptionsEvaluation('iu_xray/test_images.tsv', 'results/most_frequen
 # if the directory "embeddings" does not exits, it will be created
 # and the embeddings will be downloaded there.
 evaluation.compute_WMD('embeddings/', embeddings_file="pubmed2018_w2v_200D.bin")
-evaluation.compute_ms_coco()
+# evaluation.compute_ms_coco()
