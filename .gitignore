@@ -3,6 +3,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+embeddings/
+iu_xray/
+MIC/
+results/
+datasets/
 # C extensions
 *.so
 
