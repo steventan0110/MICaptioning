@@ -15,7 +15,7 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 
 class Tokenizer():
     # Load datasets, also create vocab for tokenizer
-    def __init__(self, caption_dir, MIN_FREQ=100, RM_TOP=5):
+    def __init__(self, caption_dir, MIN_FREQ=10, RM_TOP=5):
         with open(caption_dir) as json_file:
             caption_dict = json.load(json_file)
 

@@ -7,7 +7,7 @@ import json
 import numpy as np
 from torchvision import transforms
 import pickle
-from tokenizer import Tokenizer
+from utils.tokenizer import Tokenizer
 
 
 class ChestXrayDataSet(Dataset):
