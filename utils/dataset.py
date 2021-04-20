@@ -20,10 +20,12 @@ class ChestXrayDataSet(Dataset):
         try:
             if self.op == 'train':
                 self.data_dir = os.path.join(input_dir, 'train')
-            elif self.op == 'val':
-                self.data_dir = os.path.join(input_dir, 'validation')
+            elif self.op == 'valid':
+                self.data_dir = os.path.join(input_dir, 'valid')
             elif self.op == 'test':
                 self.data_dir = os.path.join(input_dir, 'test')
+            else:
+                raise ValueError
         except ValueError:
             print('op should be either train, val or test!')
         self.tokenizer = tokenizer

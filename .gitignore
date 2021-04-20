@@ -6,6 +6,7 @@ __pycache__/
 embeddings/
 iu_xray/
 MIC/
+checkpoints/
 results/
 datasets/
 # C extensions

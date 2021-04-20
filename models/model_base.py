@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from decoder.lstm import LSTMDecoder
-from encoder.encoder import EncoderCNN
+from models.decoder.lstm import LSTMDecoder
+from models.encoder.encoder import EncoderCNN
 
 class EncoderDecoderModel(nn.Module):
     def __init__(self, tokenizer):

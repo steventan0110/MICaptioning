@@ -1,5 +1,5 @@
 import torch
-
+import os
 # train model for 1 epoch
 class Trainer():
     def __init__(self, model, train_dataloader, valid_dataloader, **kwargs):
@@ -10,10 +10,10 @@ class Trainer():
         self.valid_dataloader = valid_dataloader
         # TODO: constructing optimizer, scheduler can be modularized for different args passed in
         self.criterion = torch.nn.CrossEntropyLoss()
-        self.optimizer = optimizer = torch.optim.Adam(self.model.parameters(), lr=self.args.learning_rate)
+        self.optimizer = optimizer = torch.optim.Adam(self.model.parameters(), lr=self.args['learning_rate'])
         self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
             self.optimizer, 
-            max_lr=self.args.learning_rate, 
+            max_lr=self.args['learning_rate'], 
             epochs=self.args['max_epoch'], 
             steps_per_epoch=len(self.train_dataloader)) 
 
@@ -27,10 +27,9 @@ class Trainer():
         for i, (img, caption) in enumerate(self.train_dataloader):
             img, caption = img.to(self.device), caption.to(self.device)
             out = self.model(img, caption)
-
             # need to flatten the sentence before computing crossentropy loss
-            bz, vocab_size = out.size(0), out.size(2)
-            loss = self.criterion(out.view(-1, vocab_size), caption.view(-1, 1).squeeze())
+            vocab_size = out.size(2)
+            loss = self.criterion(out.reshape(-1, vocab_size), caption.reshape(-1, 1).squeeze())
             train_loss += loss
             # backward, might want to control the update step size
             self.optimizer.zero_grad()
@@ -43,18 +42,22 @@ class Trainer():
         with torch.no_grad():
             for i, (img, caption) in enumerate(self.valid_dataloader):
                 img, caption = img.to(self.device), caption.to(self.device)
-                loss = self.model(img, caption)
-                valid_loss += loss
+                out = self.model(img, caption)
+                vocab_size = out.size(2)
+                loss = self.criterion(out.reshape(-1, vocab_size), caption.reshape(-1, 1).squeeze())
+                val_loss += loss
                 val_steps += 1
 
         return train_loss / train_steps, val_loss / val_steps
 
     def save_checkpoint(self, EPOCH, PATH):
+
+        save_path = os.path.join(PATH, 'checkpoint'+str(EPOCH)+'.pt')
         torch.save({
             'epoch': EPOCH,
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
-            }, PATH)
+            }, save_path)
 
     def load_checkpoint(self, PATH):
         checkpoint = torch.load(PATH)

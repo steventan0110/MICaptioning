@@ -6,6 +6,7 @@ from torchvision import transforms
 import torch
 from trainer import Trainer
 from generator import Generator
+from models.model_base import EncoderDecoderModel
 
 def main(args):
     print(args)
@@ -18,6 +19,11 @@ def main(args):
         transforms.RandomHorizontalFlip(),
         transforms.Normalize((0.485, 0.456, 0.406),
                              (0.229, 0.224, 0.225))])
+    valid_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Resize(256),
+        transforms.RandomCrop(224)
+    ])
                         
     if args.mode == 'train': 
         train_dataset = ChestXrayDataSet(args.data_dir, 'train', tokenizer, transform)
@@ -26,15 +32,16 @@ def main(args):
                                               shuffle=True,
                                               collate_fn=collate_fn)
 
-        valid_dataset = ChestXrayDataSet(args.data_dir, 'valid', tokenizer, transform=None)
+        valid_dataset = ChestXrayDataSet(args.data_dir, 'valid', tokenizer, transform=valid_transform)
         valid_dataloader = torch.utils.data.DataLoader(dataset=valid_dataset,
                                               batch_size=args.batch_size,
                                               shuffle=False,
                                               collate_fn=collate_fn)
 
         # TODO: load model here once model file is written
-        model = None
-        trainer = Trainer(model, train_dataloader, valid_dataloader, args)
+        model = EncoderDecoderModel(tokenizer)
+        # print(model)
+        trainer = Trainer(model, train_dataloader, valid_dataloader, **vars(args))
         if args.load_dir:
             trainer.load_checkpoint(args.load_dir)
 
