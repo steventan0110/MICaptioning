@@ -11,3 +11,4 @@
     downloads.download_iu_xray()
     ```
 - Once data are donwloaded, run `build_dataset_folder.py` to automatically create the train/valid/test folders and populate with images and captions. This is required for dataloader to work properly.
+

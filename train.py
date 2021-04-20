@@ -19,8 +19,7 @@ def main(args):
         transforms.Normalize((0.485, 0.456, 0.406),
                              (0.229, 0.224, 0.225))])
                         
-    if args.mode == 'train':
-        
+    if args.mode == 'train': 
         train_dataset = ChestXrayDataSet(args.data_dir, 'train', tokenizer, transform)
         train_dataloader = torch.utils.data.DataLoader(dataset=train_dataset,
                                               batch_size=args.batch_size,
@@ -42,7 +41,6 @@ def main(args):
         EPOCH = args.max_epoch 
         for i in range(EPOCH):
             # trainer perform forward calculation for only 1 epoch
-            
             loss, val_loss = trainer.train()
             print('Epoch{}, loss:{}, validation loss{}'.format(i+1, loss, val_loss))
             if i % args.log_interval == 0:

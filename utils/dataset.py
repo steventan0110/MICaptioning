@@ -40,7 +40,8 @@ class ChestXrayDataSet(Dataset):
         
         out_img = self.transform(img)
         # sample = {'img': out_img[0, :, :].unsqueeze(0), 'caption': caption}
-        return out_img[0, :, :].unsqueeze(0), self.tokenizer.encode(caption), self.tokenizer.pad
+        # 1 channel img: return out_img[0, :, :].unsqueeze(0), self.tokenizer.encode(caption), self.tokenizer.pad
+        return out_img, self.tokenizer.encode(caption), self.tokenizer.pad
 
     def __len__(self):
         return len(next(os.walk(self.data_dir))[1])
@@ -63,7 +64,7 @@ def collate_fn(data):
         token = torch.tensor(captions[i])
         caption[i, :] = torch.cat((token, padding), dim=0)
 
-    return image, caption
+    return image, caption.long()
 
 
 def get_loader(input_dir,

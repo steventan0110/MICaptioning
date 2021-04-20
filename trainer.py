@@ -9,6 +9,7 @@ class Trainer():
         self.train_dataloader = train_dataloader
         self.valid_dataloader = valid_dataloader
         # TODO: constructing optimizer, scheduler can be modularized for different args passed in
+        self.criterion = torch.nn.CrossEntropyLoss()
         self.optimizer = optimizer = torch.optim.Adam(self.model.parameters(), lr=self.args.learning_rate)
         self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
             self.optimizer, 
@@ -25,7 +26,11 @@ class Trainer():
         self.model.train()
         for i, (img, caption) in enumerate(self.train_dataloader):
             img, caption = img.to(self.device), caption.to(self.device)
-            loss = self.model(img, caption)
+            out = self.model(img, caption)
+
+            # need to flatten the sentence before computing crossentropy loss
+            bz, vocab_size = out.size(0), out.size(2)
+            loss = self.criterion(out.view(-1, vocab_size), caption.view(-1, 1).squeeze())
             train_loss += loss
             # backward, might want to control the update step size
             self.optimizer.zero_grad()
