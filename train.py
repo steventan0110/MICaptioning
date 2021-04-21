@@ -9,7 +9,7 @@ from generator import Generator
 from models.model_base import EncoderDecoderModel
 
 def main(args):
-    print(args)
+    print(args, flush=True)
     tokenizer = Tokenizer(args.caption_dir)
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -49,7 +49,7 @@ def main(args):
         for i in range(EPOCH):
             # trainer perform forward calculation for only 1 epoch
             loss, val_loss = trainer.train()
-            print('Epoch{}, loss:{}, validation loss{}'.format(i+1, loss, val_loss))
+            print('Epoch{}, loss:{}, validation loss{}'.format(i+1, loss, val_loss), flush=True)
             if i % args.log_interval == 0:
                 trainer.save_checkpoint(i, loss, val_loss, args.save_dir)
 
