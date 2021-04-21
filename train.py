@@ -51,7 +51,7 @@ def main(args):
             loss, val_loss = trainer.train()
             print('Epoch{}, loss:{}, validation loss{}'.format(i+1, loss, val_loss))
             if i % args.log_interval == 0:
-                trainer.save_checkpoint(i, args.save_dir)
+                trainer.save_checkpoint(i, loss, val_loss, args.save_dir)
 
     else:
         # TODO: decode image and compute BLEU against test captions

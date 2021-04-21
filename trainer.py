@@ -50,11 +50,13 @@ class Trainer():
 
         return train_loss / train_steps, val_loss / val_steps
 
-    def save_checkpoint(self, EPOCH, PATH):
+    def save_checkpoint(self, EPOCH, loss, val_loss, PATH):
 
         save_path = os.path.join(PATH, 'checkpoint'+str(EPOCH)+'.pt')
         torch.save({
             'epoch': EPOCH,
+            'loss': loss,
+            'val_loss': val_loss,
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
             }, save_path)
