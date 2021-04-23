@@ -15,7 +15,7 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 
 class Tokenizer():
     # Load datasets, also create vocab for tokenizer
-    def __init__(self, caption_dir, MIN_FREQ=10, RM_TOP=5):
+    def __init__(self, caption_dir, MIN_FREQ=2, RM_TOP=0):
         with open(caption_dir) as json_file:
             caption_dict = json.load(json_file)
 
@@ -49,7 +49,15 @@ class Tokenizer():
         return output
          
     def decode(self, input_token):
-        return [self.i2w[token] for token in input_token]
+        """ decode the input token (in batch) into words """
+        bz, seqlen = input_token.size(0), input_token.size(0)
+        token = input_token.tolist()
+        output = []
+        for i in range(bz):
+            # strip padding and unknown tokens to avoid BLEU score buffed
+            sent = " ".join([self.i2w[t] for t in token[i] if t != self.pad and t != self.unk])
+            output.append(sent)
+        return output
 
     def tokenize(self, text):
         """
