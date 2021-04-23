@@ -40,7 +40,7 @@ def main(args):
 
         # TODO: load model here once model file is written
         model = EncoderDecoderModel(tokenizer)
-        # print(model)
+        print(model)
         trainer = Trainer(model, train_dataloader, valid_dataloader, **vars(args))
         if args.load_dir:
             trainer.load_checkpoint(args.load_dir)
@@ -55,15 +55,15 @@ def main(args):
 
     else:
         # TODO: decode image and compute BLEU against test captions
-        test_dataset = ChestXrayDataSet(args.data_dir, 'test', tokenizer, transform=None)
-        test_dataloader = torch.utils.data.DataLoader(dataset=valid_dataset,
+        test_dataset = ChestXrayDataSet(args.data_dir, 'test', tokenizer, transform=valid_transform)
+        test_dataloader = torch.utils.data.DataLoader(dataset=test_dataset,
                                               batch_size=args.batch_size,
                                               shuffle=False,
                                               collate_fn=collate_fn)
         
         # TODO: load model here once model file is written
-        model = None
-        generator = Generator(model, args.load_dir, test_dataloader, tokenizer)
+        model = EncoderDecoderModel(tokenizer)
+        generator = Generator(model, args.load_dir, test_dataloader, tokenizer, **vars(args))
         generator.eval() # print to console the evaluation
 
 def parse_args() -> argparse.Namespace:

@@ -25,11 +25,12 @@ class Tokenizer():
         vocab_counts = Counter(vocab)
         stopwords = set([s[0] for s in vocab_counts.most_common(RM_TOP)])
         self.vocab = set([v for v in set(vocab) if vocab_counts[v] >= MIN_FREQ and v not in stopwords] + 
-            ['<eos>'] + ['<pad>'] + ['<unk>'])
+            ['<bos>'] + ['<eos>'] + ['<pad>'] + ['<unk>'])
         
         self.vocab_size = len(self.vocab)
         self.w2i = {w: i for i, w in enumerate(sorted(self.vocab))}
         self.i2w = {i: w for i, w in enumerate(sorted(self.vocab))}
+        self.bos = self.w2i['<bos>']
         self.eos = self.w2i['<eos>']
         self.pad = self.w2i['<pad>']
         self.unk = self.w2i['<unk>']
@@ -37,13 +38,14 @@ class Tokenizer():
     def encode(self, input_text):
         """ encode the input using established vocab and dictionary """
         sentences = self.tokenize(input_text)
-        output = []
+        output = [self.bos]
         for sent in sentences:
             for tokens in sent:
                 if tokens not in self.w2i:
                     output.append(self.unk)
                 else:
                     output.append(self.w2i[tokens])
+        output.append(self.eos)
         return output
          
     def decode(self, input_token):
