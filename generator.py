@@ -8,19 +8,19 @@ class Generator():
         self.model = model.to(self.device)
         self.load_checkpoint(model_path)
         self.tokenizer = tokenizer
-
-    def eval():
+        self.test_dataloader = test_dataloader
+     
+    def eval(self):
         # TODO: generate result and compute BLEU score
         tgt = []
         hypo = []
-        print(self.model)
-        raise Exception
-        # for (img, caption) in test_dataloader:
-        #     caption_text = self.tokenizer.decode(caption)
-        #     tgt.append(caption_text)
-        #     img = img.to(self.device)
-        #     decoder_out = self.beam_search(model, img)
-        #     hypo.append(decoder_out)
+        # cell and LSTM has to have the same parameter!
+        # print(list(self.model.LSTMCell.named_parameters()))
+        # print(list(self.model.decoder.lstm.named_parameters()))
+        
+        for (img, caption) in self.test_dataloader:
+            tokens = self.model.inference(img, caption)
+            # TODO: decode and compute score
         
         # bleu = sacrebleu.corpus_bleu(tgt, [hypo])
         # print(bleu.score)

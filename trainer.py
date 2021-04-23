@@ -37,7 +37,7 @@ class Trainer():
             self.optimizer.step()
             self.scheduler.step()
             train_steps += 1
-        
+
         self.model.eval()
         with torch.no_grad():
             for i, (img, caption) in enumerate(self.valid_dataloader):
@@ -47,7 +47,7 @@ class Trainer():
                 loss = self.criterion(out.reshape(-1, vocab_size), caption.reshape(-1, 1).squeeze())
                 val_loss += loss
                 val_steps += 1
-
+                
         return train_loss / train_steps, val_loss / val_steps
 
     def save_checkpoint(self, EPOCH, loss, val_loss, PATH):
@@ -62,7 +62,7 @@ class Trainer():
             }, save_path)
 
     def load_checkpoint(self, PATH):
-        checkpoint = torch.load(PATH)
+        checkpoint = torch.load(PATH, map_location=self.device)
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 

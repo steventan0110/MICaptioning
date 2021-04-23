@@ -40,7 +40,6 @@ def main(args):
 
         # TODO: load model here once model file is written
         model = EncoderDecoderModel(tokenizer)
-        print(model)
         trainer = Trainer(model, train_dataloader, valid_dataloader, **vars(args))
         if args.load_dir:
             trainer.load_checkpoint(args.load_dir)
