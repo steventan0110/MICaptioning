@@ -18,13 +18,16 @@ class Generator():
         # cell and LSTM has to have the same parameter!
         # print(list(self.model.LSTMCell.named_parameters()))
         # print(list(self.model.decoder.lstm.named_parameters()))
+    
         scores = []
         for (img, caption) in self.test_dataloader:
             bz = img.size(0)
             tokens = self.model.inference(img, caption)
             hypo = self.tokenizer.decode(tokens)
             tgt = self.tokenizer.decode(caption)
-
+            # print(hypo)
+            # print(tgt)
+            # print()
             for i in range(bz):
                 # compute bleu for each pair and print out if required
                 bleu = sacrebleu.corpus_bleu(hypo[i], tgt[i])
