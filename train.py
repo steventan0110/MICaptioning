@@ -52,7 +52,7 @@ def main(args):
             if i % args.log_interval == 0:
                 trainer.save_checkpoint(i, loss, val_loss, args.save_dir)
 
-    else:
+    elif args.mode == 'test':
         # TODO: decode image and compute BLEU against test captions
         test_dataset = ChestXrayDataSet(args.data_dir, 'test', tokenizer, transform=valid_transform)
         test_dataloader = torch.utils.data.DataLoader(dataset=test_dataset,
@@ -65,9 +65,23 @@ def main(args):
         generator = Generator(model, args.load_dir, test_dataloader, tokenizer, **vars(args))
         generator.eval() # print to console the evaluation
 
+    elif args.mode == 'interactive':
+        test_dataset = ChestXrayDataSet(args.data_dir, 'test', tokenizer, transform=valid_transform)
+        idx = input("input test image id:")
+        x = test_dataset[idx]
+        img, caption = collate_fn([test_dataset[idx]])
+
+        model = EncoderDecoderModel(tokenizer)
+        tokens = model.inference(img, caption)
+        hypo = self.tokenizer.decode(tokens)
+        tgt = self.tokenizer.decode(caption)
+        print('predicted:', hypo)
+        print('target:', tgt)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(__doc__)
-    parser.add_argument('--mode', '-m', choices={'train', 'test'}, help="execution mode")
+    parser.add_argument('--mode', '-m', choices={'train', 'test', 'interactive'}, help="execution mode")
     parser.add_argument('--caption-dir', type=Path)
     parser.add_argument('--data-dir', type=Path)
     parser.add_argument('--save-dir', type=Path)

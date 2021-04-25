@@ -10,7 +10,7 @@ class Generator():
         self.load_checkpoint(model_path)
         self.tokenizer = tokenizer
         self.test_dataloader = test_dataloader
-     
+
     def eval(self):
         # TODO: generate result and compute BLEU score
         tgt = []

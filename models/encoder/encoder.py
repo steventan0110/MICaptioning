@@ -2,11 +2,13 @@ import torch
 import torch.nn as nn
 import torchvision.models as models
 
+import sys
+# insert at 1, 0 is the script path (or '' in REPL)
+sys.path.append('/Users/chenyuzhang/Desktop/JHU-6/DL/MICaptioning')
+
 # reference: https://github.com/ZexinYan/Medical-Report-Generation/blob/d26f25c628cb0d5626e7b70e8d49366a340003ac/utils/models.py
 
 # CNN to produce visual features
-
-
 class EncoderCNN(nn.Module):
     def __init__(self):
         super(EncoderCNN, self).__init__()
@@ -30,8 +32,6 @@ class EncoderCNN(nn.Module):
         return visual_features, avg_features
 
 # MLC for predicting tags and use their embeddings as semantic features
-
-
 class MLC(nn.Module):
     def __init__(self,
                  classes=156,
@@ -104,8 +104,10 @@ if __name__ == '__main__':
     from utils.dataset import ChestXrayDataSet, collate_fn
     from torchvision import transforms
 
-    caption_dir = '/mnt/d/Github/MICaptioning/iu_xray/iu_xray_captions.json'
-    data_dir = '/mnt/d/Github/MICaptioning/datasets'
+    #caption_dir = '/mnt/d/Github/MICaptioning/iu_xray/iu_xray_captions.json'
+    #data_dir = '/mnt/d/Github/MICaptioning/datasets'
+    caption_dir = '/Users/chenyuzhang/Desktop/JHU-6/DL/MICaptioning/iu_xray/iu_xray_captions.json'
+    data_dir = '/Users/chenyuzhang/Desktop/JHU-6/DL/MICaptioning/datasets'
     tokenizer = Tokenizer(caption_dir)
     transform = transforms.Compose([
         transforms.ToTensor(),
