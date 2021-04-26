@@ -17,23 +17,29 @@ class LSTMDecoder(nn.Module):
         self.num_layers = num_layers
         vocab_size = self.tokenizer.vocab_size
         # TODO: load pretrained embedding or use train from scratch
+        # Cannot use dropout when number of layer=1 because it only dropouts for all but last layer
         self.embed = nn.Embedding(vocab_size, embed_dim)
-        self.lstm = nn.LSTM(embed_dim, hidden_size, num_layers)
+        self.lstm = nn.LSTM(
+            embed_dim, 
+            hidden_size, 
+            num_layers,
+            batch_first=True,
+            # dropout=dropout_in
+        ) 
         self.linear = nn.Linear(hidden_size, vocab_size)
-        self.dropout = nn.Dropout(p=0.2)
+        self.dropout = nn.Dropout(p=dropout_out)
 
     def forward(self, x, image_feature):
         embeddings = self.embed(x)
-        input_token = embeddings.permute(1,0,2)
+        # input_token = embeddings.permute(1,0,2)
         bz, hidden_size = image_feature.size(0), image_feature.size(1)
         c0 = image_feature.new_full(
             (self.num_layers, bz, hidden_size),
             0)
         h0 = image_feature.unsqueeze(0) #  num_layer x batch_size x hidden_dim
-        output, (state, _) = self.lstm(input_token, (h0, c0))
-        # output: seq_len x batch x hidden_dim, state: num_layer x batch x hidden_dim
-        logits = self.dropout(self.linear(output)) # seqlen x batch size x vocab size
-        return logits.permute(1, 0, 2)
+        output, (state, _) = self.lstm(embeddings, (h0, c0))
+        logits = self.dropout(self.linear(output)) # batch size x seqlen x vocab size
+        return logits
 
 
 if __name__ == '__main__':
@@ -68,4 +74,5 @@ if __name__ == '__main__':
         # test encoding img into features
         _, encoder_out = encoder(img)
         decoder_out = decoder(caption, encoder_out)
+        print(decoder_out.shape)
         break

@@ -9,4 +9,4 @@ python $TRAIN \
     --caption-dir $CAPTION \
     --data-dir $DATA \
     --max-epoch 10 \
-    --load-dir $CHECKPOINT/checkpoint0.pt
+    --load-dir $CHECKPOINT/checkpoint50.pt

@@ -13,12 +13,6 @@ class EncoderDecoderModel(nn.Module):
         self.encoder = EncoderCNN()
         self.decoder = LSTMDecoder(tokenizer)
         self.tokenizer = tokenizer
-        # replace LSTM with LSTM cell for inference
-        self.LSTMCell = torch.nn.LSTMCell(512, 512, 1)
-        self.LSTMCell.weight_ih = self.decoder.lstm.weight_ih_l0
-        self.LSTMCell.weight_hh = self.decoder.lstm.weight_hh_l0
-        self.LSTMCell.bias_ih = self.decoder.lstm.bias_ih_l0
-        self.LSTMCell.bias_hh = self.decoder.lstm.bias_hh_l0
 
     def forward(self, image, caption, **kwargs):
         _, encoder_out = self.encoder(image, **kwargs)
@@ -31,7 +25,7 @@ class EncoderDecoderModel(nn.Module):
         input_token = encoder_out.new_full(
             (bz, 1),
             self.tokenizer.bos
-        ).squeeze().long()
+        ).long().squeeze()
         # should be replaced by an argument
         max_len = 30
         output = encoder_out.new_full(
@@ -39,33 +33,32 @@ class EncoderDecoderModel(nn.Module):
             self.tokenizer.pad
         ).long()
         output[:, 0] = input_token
-        prev_hidden = encoder_out
+        prev_hidden = encoder_out.unsqueeze(0)
         prev_c = encoder_out.new_full(
-            (bz, 512), #(self.num_layers, bz, hidden_size)
+            (1, bz, 512), #(self.num_layers, bz, hidden_size)
             0
         )
         
         is_decoding = encoder_out.new_ones(bz).bool()
         for i in range(max_len-1):
             embed_token = self.decoder.embed(input_token) # bz x embed_dim
-            prev_hidden, prev_c = self.LSTMCell(embed_token, (prev_hidden, prev_c))
-            logit = self.decoder.linear(prev_hidden)
+            input_token = embed_token.unsqueeze(dim=1)
+            x, (prev_hidden, prev_c) = self.decoder.lstm(input_token, (prev_hidden, prev_c))
+            logit = self.decoder.linear(x)
             # greedy search
-            indice = logit.argmax(dim=1)
+            indice = logit.squeeze().argmax(dim=1)
             new_token = indice.masked_fill_(
                 ~is_decoding,
                 self.tokenizer.pad
             )
             is_decoding = is_decoding * torch.ne(new_token, self.tokenizer.eos)
-            input_token = new_token
+            input_token = new_token.unsqueeze(dim=1)
             output[:,i+1] = new_token
+            raise Exception
             if torch.all(~is_decoding):
                 # all batch are not decoding
                 break
         return output
-        # print(list(self.LSTMCell.named_parameters()))
-        # print(list(self.decoder.lstm.named_parameters()))
-
         
 if __name__ == '__main__':
     # test encoder decoder 
@@ -98,5 +91,5 @@ if __name__ == '__main__':
         # test encoding img into features
         out = encoder_decoder.inference(img, caption)
         # out = encoder_decoder(img, caption)
-        # print(out.shape)
+        print(out.shape)
         break
