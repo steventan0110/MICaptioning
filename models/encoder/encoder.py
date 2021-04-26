@@ -14,10 +14,10 @@ class EncoderCNN(nn.Module):
         super(EncoderCNN, self).__init__()
         vgg = True
         if vgg:
-            cnn = models.vgg19(pretrained=False)
+            cnn = models.vgg19(pretrained=True)
             # self.enc_dim = list(cnn.features.children())[-3].weight.shape[0]  # ?
         else:
-            cnn = models.resnet152(pretrained=False)
+            cnn = models.resnet152(pretrained=True)
         modules = list(cnn.children())[:-2]
         self.cnn = nn.Sequential(*modules)
         self.avgpool = torch.nn.AvgPool2d(kernel_size=7, stride=1, padding=0)
