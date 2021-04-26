@@ -70,7 +70,7 @@ if __name__ == '__main__':
     encoder = EncoderCNN()
     decoder = LSTMDecoder(tokenizer)
     # print(encoder)
-    for img, caption in train_dataloader:
+    for img, caption, tag_vec in train_dataloader:
         # test encoding img into features
         _, encoder_out = encoder(img)
         decoder_out = decoder(caption, encoder_out)

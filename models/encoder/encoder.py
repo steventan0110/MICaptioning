@@ -42,6 +42,7 @@ class MLC(nn.Module):
         self.classifier = nn.Linear(
             in_features=fc_in_features, out_features=classes)
         self.embed = nn.Embedding(classes, sementic_features_dim)
+        self.k = k
         self.softmax = nn.Softmax()
         self.__init_weight()
 
@@ -122,7 +123,7 @@ if __name__ == '__main__':
                                                    collate_fn=collate_fn)
     encoder = EncoderCNN()
     # print(encoder)
-    for img, caption in train_dataloader:
+    for img, caption, tag_vec in train_dataloader:
         # test encoding img into features
         print(img.shape)
         encoder_out = encoder(img)

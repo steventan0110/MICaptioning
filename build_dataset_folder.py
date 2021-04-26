@@ -7,8 +7,11 @@ cwd = os.getcwd()
 xray_path = os.path.join(cwd, 'iu_xray')
 image_path = os.path.join(xray_path, 'iu_xray_images')
 caption_file = os.path.join(xray_path, 'iu_xray_captions.json')
+autotag_file = os.path.join(xray_path, 'iu_xray_auto_tags.json')
 with open(caption_file) as json_file:
     caption_dict = json.load(json_file)
+with open(autotag_file) as json_file:
+    autotag_dict = json.load(json_file)
 
 # create data folder
 dataset_path = os.path.join(cwd, 'datasets')
@@ -26,6 +29,7 @@ counter = 0
 for item in filename:
     try:
         caption = caption_dict[item]
+        autotags = autotag_dict[item]
     except Exception:
         # no caption exists for this image, ignore it
         continue
@@ -53,6 +57,8 @@ for item in filename:
     # write caption of the corresponding image to the folder
     with open(os.path.join(folder, 'caption.txt'), 'w') as f:
         f.write(caption)
-    
+    with open(os.path.join(folder, 'autotags.txt'), 'w') as f:
+        for tag in autotags:
+            f.write(f'{tag}\n')
     counter += 1
 
