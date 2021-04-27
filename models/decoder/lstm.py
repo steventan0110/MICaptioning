@@ -29,9 +29,12 @@ class LSTMDecoder(nn.Module):
         self.linear = nn.Linear(hidden_size, vocab_size)
         self.dropout = nn.Dropout(p=dropout_out)
 
-    def forward(self, caption, image_feature):
-        embeddings = self.embed(caption)
+    # def init_hidden(self, batch_size):
+    #     return (torch.zeros(self.num_layers, batch_size, self.hidden_size), \
+    #         torch.zeros(self.num_layers, batch_size, self.hidden_size))
 
+    def forward(self, caption, image_feature):
+        # embeddings = self.embed(caption)
         # # input_token = embeddings.permute(1,0,2)
         # bz, hidden_size = image_feature.size(0), image_feature.size(1)
         # c0 = image_feature.new_full(
@@ -40,11 +43,12 @@ class LSTMDecoder(nn.Module):
         # h0 = image_feature.unsqueeze(0) #  num_layer x batch_size x hidden_dim
         # output, (state, _) = self.lstm(embeddings, (h0, c0))
 
+        caption = caption[:, :-1]
+        embeddings = self.embed(caption)
+        batch_size = image_feature.shape[0]
         image_feature = image_feature.unsqueeze(1)  # img_feat: [4,1,512], emb: [4, seqlen, 512]
-        #print(caption.shape, image_feature.shape, embeddings.shape)
         embeddings = torch.cat((image_feature, embeddings), 1)  # shape: [4, seqlen+1, 512]
         output, _ = self.lstm(embeddings)  # shape: [4, seqlen+1, vocab_size=2277]
-        #print(output.shape)
         logits = self.dropout(self.linear(output)) # batch size x seqlen+1 x vocab size
         return logits
 

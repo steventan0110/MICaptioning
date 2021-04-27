@@ -26,8 +26,7 @@ class Trainer():
         self.model.train()
         for i, (img, caption) in enumerate(self.train_dataloader):
             img, caption = img.to(self.device), caption.to(self.device)
-            caption_train = caption[:, :-1]
-            out = self.model(img, caption_train)
+            out = self.model(img, caption)
             # need to flatten the sentence before computing crossentropy loss
             vocab_size = out.size(2)
             loss = self.criterion(out.reshape(-1, vocab_size), caption.reshape(-1, 1).squeeze())

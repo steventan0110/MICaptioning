@@ -22,11 +22,11 @@ class Generator():
         scores = []
         for (img, caption) in self.test_dataloader:
             bz = img.size(0)
-            tokens = self.model.inference(img, caption)
+            tokens = self.model.inference(img)
             hypo = self.tokenizer.decode(tokens)
             tgt = self.tokenizer.decode(caption)
-            # print(hypo)
-            # print(tgt)
+            print(hypo)
+            print(tgt)
             # print()
             for i in range(bz):
                 # compute bleu for each pair and print out if required
@@ -43,5 +43,5 @@ class Generator():
     
     def load_checkpoint(self, PATH):
         checkpoint = torch.load(PATH, map_location=self.device)
-        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.model.load_state_dict(checkpoint['model_state_dict'], strict=False)
    
