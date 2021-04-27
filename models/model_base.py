@@ -24,17 +24,23 @@ class EncoderDecoderModel(nn.Module):
 
     def inference(self, image):
         _, ip = self.encoder(image)
-        max_len = 30
+        max_len = 100
         hidden = None
         ids_list = []
+        is_decoding = torch.ones(ip.size(0)).bool()
         for t in range(max_len):
             lstm_out, hidden = self.decoder.lstm(ip.unsqueeze(1), hidden)
             linear_out = self.decoder.linear(lstm_out).squeeze(1)
-            _, word_caption = linear_out.max(dim=1)
-            ids_list.append(word_caption)
-            ip = self.decoder.embed(word_caption)
+            _, max_ids = linear_out.max(dim=1)
+            ids_list.append(max_ids)
+            is_decoding = is_decoding * torch.ne(max_ids, self.tokenizer.eos)
+            if (torch.all(~is_decoding)):
+                break
+            ip = self.decoder.embed(max_ids)
         ids_list = torch.transpose(torch.stack(ids_list), 0, 1)
         return ids_list
+
+        # BLEU: 15.18
 
         # _, encoder_out = self.encoder(image)
         # bz = encoder_out.size(0)
@@ -73,7 +79,7 @@ class EncoderDecoderModel(nn.Module):
         #     if torch.all(~is_decoding):
         #         # all batch are not decoding
         #         break
-        # return output
+        # return output  # BLEU: 4.88
 
     
     def beam_search(self, beam_size, device, SingleBeamSearchBoard, image, n_best=1):
@@ -170,8 +176,8 @@ if __name__ == '__main__':
         # test encoding img into features
         out = encoder_decoder.inference(img)
         # out = encoder_decoder(img, caption)
-        sent, prob = encoder_decoder.beam_search(5, torch.device('cpu'), SingleBeamSearchBoard, img)
-        # print(sent)
-        # print(out)
+        #sent, prob = encoder_decoder.beam_search(5, torch.device('cpu'), SingleBeamSearchBoard, img)
+        #print(sent, sent.shape)
+        print(out.shape)
         # print(prob)
         break

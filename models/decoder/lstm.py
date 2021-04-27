@@ -48,7 +48,7 @@ class LSTMDecoder(nn.Module):
         batch_size = image_feature.shape[0]
         image_feature = image_feature.unsqueeze(1)  # img_feat: [4,1,512], emb: [4, seqlen, 512]
         embeddings = torch.cat((image_feature, embeddings), 1)  # shape: [4, seqlen+1, 512]
-        output, _ = self.lstm(embeddings)  # shape: [4, seqlen+1, vocab_size=2277]
+        output, _ = self.lstm(embeddings)  # shape: [4, seqlen+1, vocab_size=2277]; h0 and c0 intialized to 0
         logits = self.dropout(self.linear(output)) # batch size x seqlen+1 x vocab size
         return logits
 

@@ -70,7 +70,7 @@ def collate_fn(data):
         token = torch.tensor(captions[i])
         caption[i, :] = torch.cat((token, padding), dim=0)
 
-    return image, caption.long()
+    return image, caption.long(), tags_vec
 
 
 def get_loader(input_dir,
