@@ -74,14 +74,76 @@ class EncoderDecoderModel(nn.Module):
         #         # all batch are not decoding
         #         break
         # return output
-        
+
+    
+    def beam_search(self, beam_size, device, SingleBeamSearchBoard, image, n_best=1):
+        _, encoder_out = self.encoder(image)
+        bz = encoder_out.size(0)
+        max_len = 30
+        # initial input is bos
+        input_token = encoder_out.new_full(
+            (bz, 1),
+            self.tokenizer.bos
+        ).long().squeeze()
+        # final output
+        output = encoder_out.new_full(
+            (bz, max_len),
+            self.tokenizer.pad
+        ).long()
+        # init beam search boards, one for each batch
+        boards = [SingleBeamSearchBoard(
+            device,
+            self.tokenizer,
+            # prev_status_config
+            {
+                "prev_hidden": encoder_out[i].unsqueeze(0).unsqueeze(0), # 1x1xhidden_size
+                "prev_cell": encoder_out.new_full(
+                    (1, 1, 512),
+                    0
+                )
+            }
+        ) for i in range(bz)]
+
+        for i in range(max_len):
+            # all batch has finished beam search
+            if sum([boards[t].is_done() for t in range(bz)]) == bz:
+                break
+            for j in range(bz):
+                # perform beam search per batch
+                board = boards[j]
+                # sample size = beam size, decode for one step
+                # prev_y = beam_size x 1, regard beam_size as batch size here
+                # embed(prev_y): beam_size x 1 x embed_dim
+                prev_y, prev_status = board.get_batch() 
+                prev_hidden = prev_status['prev_hidden'] # 1 x beam_size x hidden_size
+                prev_cell = prev_status['prev_cell'] # 1 x beam_size x hidden_size
+            
+                x, (new_hidden, new_cell) = self.decoder.lstm(self.decoder.embed(prev_y), (prev_hidden, prev_cell))
+                logit = self.decoder.linear(x)
+
+                # crucial step, update the beam board with cumulative prob
+                board.collect_result(logit, {
+                    "prev_hidden": new_hidden,
+                    "prev_cell": new_cell
+                })
+        # finished beam search, generate the token
+        output_sent = []
+        output_prob = []
+        for board in boards:
+            sentence, probs = board.get_n_best(n_best)
+            output_sent.append(sentence)
+            output_prob.append(probs)
+        return output_sent, output_prob
+            
+  
 if __name__ == '__main__':
     # test encoder decoder 
     import sys, os
-    sys.path.append(os.path.abspath(os.path.join('..', '')))
+    sys.path.append(os.path.abspath(os.path.join('/mnt/d/Github/MICaptioning', '')))
     from utils.tokenizer import Tokenizer
     from utils.dataset import ChestXrayDataSet, collate_fn
     from torchvision import transforms
+    from utils.search import SingleBeamSearchBoard
 
     # caption_dir = '/mnt/d/Github/MICaptioning/iu_xray/iu_xray_captions.json'
     # data_dir = '/mnt/d/Github/MICaptioning/datasets'
@@ -104,9 +166,12 @@ if __name__ == '__main__':
 
     encoder_decoder = EncoderDecoderModel(tokenizer)
     # print(encoder_decoder)
-    for img, caption in train_dataloader:
+    for img, caption, tags_vec in train_dataloader:
         # test encoding img into features
         out = encoder_decoder.inference(img)
         # out = encoder_decoder(img, caption)
-        print(out.shape)
+        sent, prob = encoder_decoder.beam_search(5, torch.device('cpu'), SingleBeamSearchBoard, img)
+        # print(sent)
+        # print(out)
+        # print(prob)
         break

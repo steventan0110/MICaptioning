@@ -24,7 +24,7 @@ class Trainer():
         train_steps = 0
         val_steps = 0
         self.model.train()
-        for i, (img, caption) in enumerate(self.train_dataloader):
+        for i, (img, caption, tags_vec) in enumerate(self.train_dataloader):
             img, caption = img.to(self.device), caption.to(self.device)
             out = self.model(img, caption)
             # need to flatten the sentence before computing crossentropy loss
@@ -40,7 +40,7 @@ class Trainer():
 
         self.model.eval()
         with torch.no_grad():
-            for i, (img, caption) in enumerate(self.valid_dataloader):
+            for i, (img, caption, tags_vec) in enumerate(self.valid_dataloader):
                 img, caption = img.to(self.device), caption.to(self.device)
                 out = self.model(img, caption)
                 vocab_size = out.size(2)

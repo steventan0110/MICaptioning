@@ -8,6 +8,7 @@ import numpy as np
 from torchvision import transforms
 import pickle
 from utils.tokenizer import Tokenizer
+from utils.tag_utils import tags2array
 
 
 class ChestXrayDataSet(Dataset):
@@ -39,11 +40,14 @@ class ChestXrayDataSet(Dataset):
         img = io.imread(os.path.join(self.data_dir, str(index), 'image.png'))
         with open(os.path.join(self.data_dir, str(index), 'caption.txt'), 'r') as f:
             caption = f.read()
+        with open(os.path.join(self.data_dir, str(index), 'autotags.txt'), 'r') as f:
+            autotags = f.read()
         
         out_img = self.transform(img)
+        tags_vec = np.array(tags2array(autotags))
         # sample = {'img': out_img[0, :, :].unsqueeze(0), 'caption': caption}
         # 1 channel img: return out_img[0, :, :].unsqueeze(0), self.tokenizer.encode(caption), self.tokenizer.pad
-        return out_img, self.tokenizer.encode(caption), self.tokenizer.pad
+        return out_img, self.tokenizer.encode(caption), self.tokenizer.pad, tags_vec
 
     def __len__(self):
         return len(next(os.walk(self.data_dir))[1])
@@ -51,7 +55,7 @@ class ChestXrayDataSet(Dataset):
 
 # need collate function to pad the sentences
 def collate_fn(data):
-    images, captions, pads = zip(*data)
+    images, captions, pads, tags_vec = zip(*data)
     pad_index = pads[0]
     image = torch.stack(images, 0)
     bz = len(captions)

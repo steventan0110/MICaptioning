@@ -95,6 +95,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--batch-size', default=32, type=int)
     parser.add_argument('--learning-rate', '-lr', default=0.001, type=float)
     parser.add_argument('--log-interval', default=1, type=int)
+    parser.add_argument('--beam-size', default=5, type=int)
     args = parser.parse_args()
     return args
     
