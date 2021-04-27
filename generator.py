@@ -22,7 +22,7 @@ class Generator():
         # print(list(self.model.decoder.lstm.named_parameters()))
     
         scores = []
-        for (img, caption) in self.test_dataloader:
+        for (img, caption, tags_vec) in self.test_dataloader:
             bz = img.size(0)
             tokens = self.model.inference(img)
             # hypo, _ = self.model.beam_search(self.beam_size, self.device, SingleBeamSearchBoard, img)

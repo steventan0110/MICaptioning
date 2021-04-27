@@ -55,7 +55,7 @@ class ChestXrayDataSet(Dataset):
 
 # need collate function to pad the sentences
 def collate_fn(data):
-    images, captions, pads = zip(*data)
+    images, captions, pads, tags_vec = zip(*data)
     pad_index = pads[0]
     image = torch.stack(images, 0)
     bz = len(captions)

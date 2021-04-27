@@ -149,7 +149,7 @@ if __name__ == '__main__':
 
     encoder_decoder = EncoderDecoderModel(tokenizer)
     # print(encoder_decoder)
-    for img, caption, tag_vec in train_dataloader:
+    for img, caption, tags_vec in train_dataloader:
         # test encoding img into features
         out = encoder_decoder.inference(img)
         # out = encoder_decoder(img, caption)

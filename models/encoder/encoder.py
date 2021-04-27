@@ -123,7 +123,7 @@ if __name__ == '__main__':
                                                    collate_fn=collate_fn)
     encoder = EncoderCNN()
     # print(encoder)
-    for img, caption, tag_vec in train_dataloader:
+    for img, caption, tags_vec in train_dataloader:
         # test encoding img into features
         print(img.shape)
         encoder_out = encoder(img)
