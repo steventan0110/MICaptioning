@@ -2,10 +2,6 @@ import torch
 import torch.nn as nn
 import torchvision.models as models
 
-import sys
-# insert at 1, 0 is the script path (or '' in REPL)
-sys.path.append('/Users/chenyuzhang/Desktop/JHU-6/DL/MICaptioning')
-
 # reference: https://github.com/ZexinYan/Medical-Report-Generation/blob/d26f25c628cb0d5626e7b70e8d49366a340003ac/utils/models.py
 
 # CNN to produce visual features
@@ -100,6 +96,8 @@ if __name__ == '__main__':
     # test encoder
     import sys, os
     sys.path.append(os.path.abspath(os.path.join('../..', '')))
+    sys.path.append('/Users/chenyuzhang/Desktop/JHU-6/DL/MICaptioning')
+
     from utils.tokenizer import Tokenizer
     from utils.dataset import ChestXrayDataSet, collate_fn
     from torchvision import transforms
@@ -123,7 +121,7 @@ if __name__ == '__main__':
                                                    shuffle=False,
                                                    collate_fn=collate_fn)
     encoder = EncoderCNN()
-    # print(encoder)
+    print(encoder)
     for img, caption in train_dataloader:
         # test encoding img into features
         print(img.shape)

@@ -22,9 +22,11 @@ def main(args):
     valid_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Resize(256),
-        transforms.RandomCrop(224)
+        transforms.RandomCrop(224),
+        transforms.Normalize((0.485, 0.456, 0.406),
+                        (0.229, 0.224, 0.225))
     ])
-                        
+
     if args.mode == 'train': 
         train_dataset = ChestXrayDataSet(args.data_dir, 'train', tokenizer, transform)
         train_dataloader = torch.utils.data.DataLoader(dataset=train_dataset,
@@ -62,6 +64,7 @@ def main(args):
         
         # TODO: load model here once model file is written
         model = EncoderDecoderModel(tokenizer)
+        model.eval()
         generator = Generator(model, args.load_dir, test_dataloader, tokenizer, **vars(args))
         generator.eval() # print to console the evaluation
 
