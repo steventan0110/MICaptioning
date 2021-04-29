@@ -1,12 +1,12 @@
-source /mnt/d/Github/MICaptioning/MIC/bin/activate
-TRAIN=/mnt/d/Github/MICaptioning/train.py
-CAPTION=/mnt/d/Github/MICaptioning/iu_xray/iu_xray_captions.json
-DATA=/mnt/d/Github/MICaptioning/datasets
-CHECKPOINT=/mnt/d/Github/MICaptioning/checkpoints
-PRETRAIN=/mnt/d/Github/MICaptioning/checkpoints/checkpoint5.pt
+WORK_DIR=/Users/chenyuzhang/Desktop/JHU-6/DL/MICaptioning
+TRAIN=$WORK_DIR/train.py
+DATA=$WORK_DIR/datasets
+CHECKPOINT_FOLDER=$WORK_DIR
+CAPTION=$WORK_DIR/iu_xray/iu_xray_captions.json
+
 python $TRAIN \
     --mode test --cpu \
     --caption-dir $CAPTION \
     --data-dir $DATA \
     --max-epoch 10 \
-    --load-dir $CHECKPOINT/checkpoint50.pt
+    --load-dir $CHECKPOINT_FOLDER/checkpoint95.pt

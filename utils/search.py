@@ -91,7 +91,7 @@ class SingleBeamSearchBoard():
             ).contiguous()
      
 
-    def get_n_best(self, n=1, length_penalty=.2):
+    def get_n_best(self, n=1, length_penalty=0):
         sentences, probs, founds = [], [], []
 
         for t in range(len(self.word_indice)):  # for each time-step,
@@ -108,6 +108,7 @@ class SingleBeamSearchBoard():
                     probs += [self.cumulative_probs[-1][b] * self.get_length_penalty(len(self.cumulative_probs),
                                                                                      alpha=length_penalty)]
                     founds += [(t, b)]
+        #print(founds, probs)
       
         # Sort and take n-best.
         sorted_founds_with_probs = sorted(

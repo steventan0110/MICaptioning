@@ -85,11 +85,11 @@ class EncoderDecoderModel(nn.Module):
         #         break
         # return output  # BLEU: 4.88
 
-    
+
     def beam_search(self, beam_size, device, SingleBeamSearchBoard, image, n_best=1):
         _, encoder_out = self.encoder(image)
         bz, hidden_size = encoder_out.shape
-        max_len = 30
+        max_len = 100
         # initial input is bos
         input_token = encoder_out.new_full(
             (bz, 1),
@@ -136,6 +136,7 @@ class EncoderDecoderModel(nn.Module):
                 else:
                     x, (new_hidden, new_cell) = self.decoder.lstm(self.decoder.embed(prev_y), (prev_hidden, prev_cell))
                 logit = self.decoder.linear(x)
+                logit = nn.LogSoftmax(dim=2)(logit)
                 # crucial step, update the beam board with cumulative prob
                 board.collect_result(logit, {
                     "prev_hidden": new_hidden,
