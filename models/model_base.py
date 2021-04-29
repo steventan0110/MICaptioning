@@ -46,46 +46,6 @@ class EncoderDecoderModel(nn.Module):
 
         # BLEU: 15.18
 
-        # _, encoder_out = self.encoder(image)
-        # bz = encoder_out.size(0)
-        # input_token = encoder_out.new_full(
-        #     (bz, 1),
-        #     self.tokenizer.bos
-        # ).long().squeeze()
-        # # should be replaced by an argument
-        # max_len = 30
-        # output = encoder_out.new_full(
-        #     (bz, max_len),
-        #     self.tokenizer.pad
-        # ).long()
-        # output[:, 0] = input_token
-        # prev_hidden = encoder_out.unsqueeze(0)
-        # prev_c = encoder_out.new_full(
-        #     (1, bz, 512), #(self.num_layers, bz, hidden_size)
-        #     0
-        # )
-        
-        # is_decoding = encoder_out.new_ones(bz).bool()
-        # for i in range(max_len-1):
-        #     embed_token = self.decoder.embed(input_token) # bz x embed_dim
-        #     input_token = embed_token.unsqueeze(dim=1)
-        #     x, (prev_hidden, prev_c) = self.decoder.lstm(input_token, (prev_hidden, prev_c))
-        #     logit = self.decoder.linear(x)
-        #     # greedy search
-        #     indice = logit.squeeze().argmax(dim=1) # bz
-        #     new_token = indice.masked_fill_(
-        #         ~is_decoding,
-        #         self.tokenizer.pad
-        #     )
-        #     is_decoding = is_decoding * torch.ne(new_token, self.tokenizer.eos)
-        #     input_token = new_token
-        #     output[:,i+1] = new_token
-        #     if torch.all(~is_decoding):
-        #         # all batch are not decoding
-        #         break
-        # return output  # BLEU: 4.88
-
-
     def beam_search(self, beam_size, device, SingleBeamSearchBoard, image, n_best=1):
         _, encoder_out = self.encoder(image)
         bz, hidden_size = encoder_out.shape

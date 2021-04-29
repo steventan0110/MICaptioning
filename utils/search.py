@@ -77,6 +77,11 @@ class SingleBeamSearchBoard():
 
         self.word_indice += [top_indice.fmod(output_size)]
         self.beam_indice += [top_indice.div(float(output_size)).long()]
+
+        # debug usage:
+        # print(self.word_indice)
+        # print(self.beam_indice)
+        # print()
         # Add results to history boards.
         self.cumulative_probs += [top_log_prob]
         self.masks += [torch.eq(self.word_indice[-1], self.tokenizer.eos)] # Set finish mask if we got EOS.

@@ -24,12 +24,12 @@ class Generator():
         scores = []
         for (img, caption, tags_vec) in self.test_dataloader:
             bz = img.size(0)
-            tokens = self.model.inference(img)
-            #tokens, _ = self.model.beam_search(self.beam_size, self.device, SingleBeamSearchBoard, img)
+            # tokens = self.model.inference(img)
+            tokens, _ = self.model.beam_search(self.beam_size, self.device, SingleBeamSearchBoard, img)
             tokens = torch.tensor(tokens)
             hypo = self.tokenizer.decode(tokens)
             tgt = self.tokenizer.decode(caption)
-            print('hypo:', hypo)
+  
             # print('tgt:', tgt)
             # print()
             for i in range(bz):
