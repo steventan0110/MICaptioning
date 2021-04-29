@@ -11,9 +11,9 @@ from models.encoder.encoder import EncoderCNN
 # from encoder.encoder import EncoderCNN
 
 class EncoderDecoderModel(nn.Module):
-    def __init__(self, tokenizer):
+    def __init__(self, choice, tokenizer):
         super().__init__()
-        self.encoder = EncoderCNN()
+        self.encoder = EncoderCNN(choice)
         self.decoder = LSTMDecoder(tokenizer)
         self.tokenizer = tokenizer
 
@@ -32,6 +32,10 @@ class EncoderDecoderModel(nn.Module):
             lstm_out, hidden = self.decoder.lstm(ip.unsqueeze(1), hidden)
             linear_out = self.decoder.linear(lstm_out).squeeze(1)
             _, max_ids = linear_out.max(dim=1)
+            max_ids.masked_fill_(
+                ~is_decoding,
+                self.tokenizer.pad
+            )
             ids_list.append(max_ids)
             is_decoding = is_decoding * torch.ne(max_ids, self.tokenizer.eos)
             if (torch.all(~is_decoding)):
@@ -84,7 +88,7 @@ class EncoderDecoderModel(nn.Module):
     
     def beam_search(self, beam_size, device, SingleBeamSearchBoard, image, n_best=1):
         _, encoder_out = self.encoder(image)
-        bz = encoder_out.size(0)
+        bz, hidden_size = encoder_out.shape
         max_len = 30
         # initial input is bos
         input_token = encoder_out.new_full(
@@ -97,12 +101,16 @@ class EncoderDecoderModel(nn.Module):
             self.tokenizer.pad
         ).long()
         # init beam search boards, one for each batch
+        prev_hidden = encoder_out.new_full(
+            (1, 1, hidden_size),
+            0
+        )
         boards = [SingleBeamSearchBoard(
             device,
             self.tokenizer,
             # prev_status_config
             {
-                "prev_hidden": encoder_out[i].unsqueeze(0).unsqueeze(0), # 1x1xhidden_size
+                "prev_hidden": prev_hidden, # 1x1xhidden_size
                 "prev_cell": encoder_out.new_full(
                     (1, 1, 512),
                     0
@@ -123,10 +131,11 @@ class EncoderDecoderModel(nn.Module):
                 prev_y, prev_status = board.get_batch() 
                 prev_hidden = prev_status['prev_hidden'] # 1 x beam_size x hidden_size
                 prev_cell = prev_status['prev_cell'] # 1 x beam_size x hidden_size
-            
-                x, (new_hidden, new_cell) = self.decoder.lstm(self.decoder.embed(prev_y), (prev_hidden, prev_cell))
+                if i == 0:
+                    x, (new_hidden, new_cell) = self.decoder.lstm(encoder_out[j].unsqueeze(0).unsqueeze(1))
+                else:
+                    x, (new_hidden, new_cell) = self.decoder.lstm(self.decoder.embed(prev_y), (prev_hidden, prev_cell))
                 logit = self.decoder.linear(x)
-
                 # crucial step, update the beam board with cumulative prob
                 board.collect_result(logit, {
                     "prev_hidden": new_hidden,
@@ -170,14 +179,13 @@ if __name__ == '__main__':
                                                    shuffle=False,
                                                    collate_fn=collate_fn)
 
-    encoder_decoder = EncoderDecoderModel(tokenizer)
+    encoder_decoder = EncoderDecoderModel('vgg', tokenizer)
     # print(encoder_decoder)
     for img, caption, tags_vec in train_dataloader:
         # test encoding img into features
-        out = encoder_decoder.inference(img)
+        # out = encoder_decoder.inference(img)
         # out = encoder_decoder(img, caption)
-        #sent, prob = encoder_decoder.beam_search(5, torch.device('cpu'), SingleBeamSearchBoard, img)
-        #print(sent, sent.shape)
-        print(out.shape)
+        sent, prob = encoder_decoder.beam_search(5, torch.device('cpu'), SingleBeamSearchBoard, img)
+        print(sent)
         # print(prob)
         break

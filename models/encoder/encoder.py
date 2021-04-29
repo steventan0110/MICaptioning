@@ -24,9 +24,8 @@ class DenseNet121(nn.Module):
 
 # CNN to produce visual features
 class EncoderCNN(nn.Module):
-    def __init__(self, device='cpu'):
+    def __init__(self, choice='chexnet'):
         super(EncoderCNN, self).__init__()
-        choice = 'chexnet'
         if choice == 'vgg':
             cnn = models.vgg19(pretrained=True)
             # self.enc_dim = list(cnn.features.children())[-3].weight.shape[0]  # ?
@@ -34,11 +33,15 @@ class EncoderCNN(nn.Module):
         elif choice == 'resnet':
             cnn = models.resnet152(pretrained=True)
             modules = list(cnn.children())[:-2]
+
         else:  # use a pretrained CheXNet, which has the structure of densenet121
             cnn = DenseNet121(out_size=14)
             print("Loading pretrained CheXNet")
-            checkpoint = torch.load("chexnet_model.pth.tar", map_location=torch.device(device))
+            checkpoint = torch.load("chexnet_model.pth.tar", map_location=torch.device('cpu'))
             cnn.load_state_dict(checkpoint["state_dict"], strict=False)
+            for param in cnn.parameters():
+                param.requires_grad = False
+
             modules = list(cnn.densenet121.children())[:-1]
             modules.append(nn.Conv2d(1024, 512, kernel_size=1, stride=1, padding=0))  # add a Conv layer to maintain output size of 512
 

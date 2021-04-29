@@ -24,7 +24,7 @@ source /home/gqin2/scripts/acquire-gpu
 WORK_DIR=/home/czhan105/MICaptioning
 TRAIN=$WORK_DIR/train.py
 DATA=/export/b02/wtan/MIC-dataset/datasets
-CHECKPOINT_FOLDER=/export/b02/czhan105/MIC-checkpoints/
+CHECKPOINT_FOLDER=/export/b02/czhan105/MIC-checkpoints/chexnet-lstm
 CAPTION=/export/b02/wtan/MIC-dataset/iu_xray_captions.json
 
 conda activate MIC
@@ -37,4 +37,5 @@ python $TRAIN \
         --log-interval 5 \
         --batch-size 32 \
         -lr 0.01 \
-        --save-dir $CHECKPOINT_FOLDER
+        --save-dir $CHECKPOINT_FOLDER \
+        --encoder-arch chexnet
