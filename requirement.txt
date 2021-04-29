@@ -7,10 +7,12 @@ click==7.1.2
 cycler==0.10.0
 Cython==0.29.22
 decorator==4.4.2
+einops==0.3.0
 gensim==4.0.1
 idna==2.10
 imageio==2.9.0
 img2vec-pytorch==0.2.5
+itemgetter==0.0.1
 joblib==1.0.1
 kiwisolver==1.3.1
 matplotlib==3.4.1

@@ -1,6 +1,9 @@
 import torch
 import os
 # train model for 1 epoch
+
+
+
 class Trainer():
     def __init__(self, model, train_dataloader, valid_dataloader, **kwargs):
         self.args = kwargs
@@ -16,6 +19,18 @@ class Trainer():
             max_lr=self.args['learning_rate'], 
             epochs=self.args['max_epoch'], 
             steps_per_epoch=len(self.train_dataloader)) 
+    
+    def right_shift(self, tokens):
+        eos = self.train_dataloader.dataset.tokenizer.eos
+        pad = self.train_dataloader.dataset.tokenizer.pad
+        eos_indice = (tokens == eos).nonzero(as_tuple=True)[1]
+        bz, src_len = tokens.shape
+        temp = tokens.roll(1, 1)
+        temp[:, 0] = eos
+        for i in range(bz):
+            if eos_indice[i] < src_len - 1:
+                temp[i, eos_indice[i]+1] = pad
+        return temp
 
     def train(self):
         # train for 1 epoch and return the loss of both train and valid set
@@ -24,9 +39,14 @@ class Trainer():
         train_steps = 0
         val_steps = 0
         self.model.train()
-        for i, (img, caption, tags_vec) in enumerate(self.train_dataloader):
+        for i, (img, caption) in enumerate(self.train_dataloader):
             img, caption = img.to(self.device), caption.to(self.device)
-            out = self.model(img, caption)
+            # need to right shift for transformer architecture
+            if self.args['arch'] == 'transformer':
+                prev_caption = self.right_shift(caption)
+            else:
+                prev_caption = caption
+            out = self.model(img, prev_caption)
             # need to flatten the sentence before computing crossentropy loss
             vocab_size = out.size(2)
             loss = self.criterion(out.reshape(-1, vocab_size), caption.reshape(-1, 1).squeeze())
@@ -40,9 +60,13 @@ class Trainer():
 
         self.model.eval()
         with torch.no_grad():
-            for i, (img, caption, tags_vec) in enumerate(self.valid_dataloader):
+            for i, (img, caption) in enumerate(self.valid_dataloader):
                 img, caption = img.to(self.device), caption.to(self.device)
-                out = self.model(img, caption)
+                if self.args['arch'] == 'transformer':
+                    prev_caption = self.right_shift(caption)
+                else:
+                    prev_caption = caption
+                out = self.model(img, prev_caption)
                 vocab_size = out.size(2)
                 loss = self.criterion(out.reshape(-1, vocab_size), caption.reshape(-1, 1).squeeze())
                 val_loss += loss
