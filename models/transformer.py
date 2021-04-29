@@ -193,12 +193,12 @@ class Transformer(nn.Module):
         src_pad_idx,
         trg_pad_idx,
         embed_size=512,
-        num_layers=1,
+        num_layers=4,
         forward_expansion=4,
         heads=8,
         dropout=0.1,
         device="cpu",
-        max_len=100,
+        max_len=256,
     ):
         super(Transformer, self).__init__()
         self.encoder = Encoder(

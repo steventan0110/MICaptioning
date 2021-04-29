@@ -7,6 +7,7 @@ import torch
 from trainer import Trainer
 from generator import Generator
 from models.model_base import EncoderDecoderModel
+from models.transformer import Transformer
 
 def main(args):
     print(args, flush=True)
@@ -38,8 +39,11 @@ def main(args):
                                               shuffle=False,
                                               collate_fn=collate_fn)
 
-        # TODO: load model here once model file is written
-        model = EncoderDecoderModel(tokenizer)
+
+        if args.arch == 'transformer':
+            model = Transformer(tokenizer.vocab_size, tokenizer.vocab_size, tokenizer.pad, tokenizer.pad)
+        else:
+            model = EncoderDecoderModel(tokenizer)
         trainer = Trainer(model, train_dataloader, valid_dataloader, **vars(args))
         if args.load_dir:
             trainer.load_checkpoint(args.load_dir)
