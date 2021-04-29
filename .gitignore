@@ -9,6 +9,8 @@ MIC/
 checkpoints/
 results/
 datasets/
+/script
+
 # C extensions
 *.so
 *.png
