@@ -9,7 +9,7 @@ MIC/
 checkpoints/
 results/
 datasets/
-/script
+script/
 
 # C extensions
 *.so
