@@ -1,3 +1,6 @@
+import sys
+sys.path.append('/Users/chenyuzhang/Desktop/JHU-6/DL/MICaptioning')
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,9 +11,9 @@ from models.encoder.encoder import EncoderCNN
 # from encoder.encoder import EncoderCNN
 
 class EncoderDecoderModel(nn.Module):
-    def __init__(self, tokenizer):
+    def __init__(self, choice, tokenizer):
         super().__init__()
-        self.encoder = EncoderCNN()
+        self.encoder = EncoderCNN(choice)
         self.decoder = LSTMDecoder(tokenizer)
         self.tokenizer = tokenizer
 
@@ -20,50 +23,33 @@ class EncoderDecoderModel(nn.Module):
         return decoder_out
 
     def inference(self, image):
-        _, encoder_out = self.encoder(image)
-        bz = encoder_out.size(0)
-        input_token = encoder_out.new_full(
-            (bz, 1),
-            self.tokenizer.bos
-        ).long().squeeze()
-        # should be replaced by an argument
-        max_len = 30
-        output = encoder_out.new_full(
-            (bz, max_len),
-            self.tokenizer.pad
-        ).long()
-        output[:, 0] = input_token
-        prev_hidden = encoder_out.unsqueeze(0)
-        prev_c = encoder_out.new_full(
-            (1, bz, 512), #(self.num_layers, bz, hidden_size)
-            0
-        )
-        
-        is_decoding = encoder_out.new_ones(bz).bool()
-        for i in range(max_len-1):
-            embed_token = self.decoder.embed(input_token) # bz x embed_dim
-            input_token = embed_token.unsqueeze(dim=1)
-            x, (prev_hidden, prev_c) = self.decoder.lstm(input_token, (prev_hidden, prev_c))
-            logit = self.decoder.linear(x)
-            # greedy search
-            indice = logit.squeeze().argmax(dim=1) # bz
-            new_token = indice.masked_fill_(
+        _, ip = self.encoder(image)
+        max_len = 100
+        hidden = None
+        ids_list = []
+        is_decoding = torch.ones(ip.size(0)).bool()
+        for t in range(max_len):
+            lstm_out, hidden = self.decoder.lstm(ip.unsqueeze(1), hidden)
+            linear_out = self.decoder.linear(lstm_out).squeeze(1)
+            _, max_ids = linear_out.max(dim=1)
+            max_ids.masked_fill_(
                 ~is_decoding,
                 self.tokenizer.pad
             )
-            is_decoding = is_decoding * torch.ne(new_token, self.tokenizer.eos)
-            input_token = new_token
-            output[:,i+1] = new_token
-            if torch.all(~is_decoding):
-                # all batch are not decoding
+            ids_list.append(max_ids)
+            is_decoding = is_decoding * torch.ne(max_ids, self.tokenizer.eos)
+            if (torch.all(~is_decoding)):
                 break
-        return output
+            ip = self.decoder.embed(max_ids)
+        ids_list = torch.transpose(torch.stack(ids_list), 0, 1)
+        return ids_list
 
-    
+        # BLEU: 15.18
+
     def beam_search(self, beam_size, device, SingleBeamSearchBoard, image, n_best=1):
         _, encoder_out = self.encoder(image)
-        bz = encoder_out.size(0)
-        max_len = 30
+        bz, hidden_size = encoder_out.shape
+        max_len = 100
         # initial input is bos
         input_token = encoder_out.new_full(
             (bz, 1),
@@ -75,12 +61,16 @@ class EncoderDecoderModel(nn.Module):
             self.tokenizer.pad
         ).long()
         # init beam search boards, one for each batch
+        prev_hidden = encoder_out.new_full(
+            (1, 1, hidden_size),
+            0
+        )
         boards = [SingleBeamSearchBoard(
             device,
             self.tokenizer,
             # prev_status_config
             {
-                "prev_hidden": encoder_out[i].unsqueeze(0).unsqueeze(0), # 1x1xhidden_size
+                "prev_hidden": prev_hidden, # 1x1xhidden_size
                 "prev_cell": encoder_out.new_full(
                     (1, 1, 512),
                     0
@@ -101,10 +91,12 @@ class EncoderDecoderModel(nn.Module):
                 prev_y, prev_status = board.get_batch() 
                 prev_hidden = prev_status['prev_hidden'] # 1 x beam_size x hidden_size
                 prev_cell = prev_status['prev_cell'] # 1 x beam_size x hidden_size
-            
-                x, (new_hidden, new_cell) = self.decoder.lstm(self.decoder.embed(prev_y), (prev_hidden, prev_cell))
+                if i == 0:
+                    x, (new_hidden, new_cell) = self.decoder.lstm(encoder_out[j].unsqueeze(0).unsqueeze(1))
+                else:
+                    x, (new_hidden, new_cell) = self.decoder.lstm(self.decoder.embed(prev_y), (prev_hidden, prev_cell))
                 logit = self.decoder.linear(x)
-
+                logit = nn.LogSoftmax(dim=2)(logit)
                 # crucial step, update the beam board with cumulative prob
                 board.collect_result(logit, {
                     "prev_hidden": new_hidden,
@@ -119,8 +111,7 @@ class EncoderDecoderModel(nn.Module):
             output_prob.append(probs)
         return output_sent, output_prob
             
-
-        
+  
 if __name__ == '__main__':
     # test encoder decoder 
     import sys, os
@@ -130,8 +121,10 @@ if __name__ == '__main__':
     from torchvision import transforms
     from utils.search import SingleBeamSearchBoard
 
-    caption_dir = '/mnt/d/Github/MICaptioning/iu_xray/iu_xray_captions.json'
-    data_dir = '/mnt/d/Github/MICaptioning/datasets'
+    # caption_dir = '/mnt/d/Github/MICaptioning/iu_xray/iu_xray_captions.json'
+    # data_dir = '/mnt/d/Github/MICaptioning/datasets'
+    caption_dir = '//Users/chenyuzhang/Desktop/JHU-6/DL/MICaptioning/iu_xray/iu_xray_captions.json'
+    data_dir = '/Users/chenyuzhang/Desktop/JHU-6/DL/MICaptioning/datasets'
     tokenizer = Tokenizer(caption_dir)
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -147,14 +140,13 @@ if __name__ == '__main__':
                                                    shuffle=False,
                                                    collate_fn=collate_fn)
 
-    encoder_decoder = EncoderDecoderModel(tokenizer)
+    encoder_decoder = EncoderDecoderModel('vgg', tokenizer)
     # print(encoder_decoder)
     for img, caption, tags_vec in train_dataloader:
         # test encoding img into features
-        out = encoder_decoder.inference(img)
+        # out = encoder_decoder.inference(img)
         # out = encoder_decoder(img, caption)
         sent, prob = encoder_decoder.beam_search(5, torch.device('cpu'), SingleBeamSearchBoard, img)
-        # print(sent)
-        # print(out)
+        print(sent)
         # print(prob)
         break

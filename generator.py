@@ -12,7 +12,7 @@ class Generator():
         self.load_checkpoint(model_path)
         self.tokenizer = tokenizer
         self.test_dataloader = test_dataloader
-     
+
     def eval(self):
         # TODO: generate result and compute BLEU score
         tgt = []
@@ -24,13 +24,13 @@ class Generator():
         scores = []
         for (img, caption, tags_vec) in self.test_dataloader:
             bz = img.size(0)
-            tokens = self.model.inference(img)
-            # hypo, _ = self.model.beam_search(self.beam_size, self.device, SingleBeamSearchBoard, img)
+            # tokens = self.model.inference(img)
+            tokens, _ = self.model.beam_search(self.beam_size, self.device, SingleBeamSearchBoard, img)
+            tokens = torch.tensor(tokens)
             hypo = self.tokenizer.decode(tokens)
-           
             tgt = self.tokenizer.decode(caption)
-            # print(hypo)
-            # print(tgt)
+  
+            # print('tgt:', tgt)
             # print()
             for i in range(bz):
                 # compute bleu for each pair and print out if required
@@ -47,5 +47,5 @@ class Generator():
     
     def load_checkpoint(self, PATH):
         checkpoint = torch.load(PATH, map_location=self.device)
-        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.model.load_state_dict(checkpoint['model_state_dict'], strict=False)
    

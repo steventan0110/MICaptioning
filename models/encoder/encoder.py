@@ -4,34 +4,60 @@ import torchvision.models as models
 
 # reference: https://github.com/ZexinYan/Medical-Report-Generation/blob/d26f25c628cb0d5626e7b70e8d49366a340003ac/utils/models.py
 
+class DenseNet121(nn.Module):
+    """Model modified.
+    The architecture of our model is the same as standard DenseNet121
+    except the classifier layer which has an additional sigmoid function.
+    """
+    def __init__(self, out_size):
+        super(DenseNet121, self).__init__()
+        self.densenet121 = models.densenet121(pretrained=True)
+        num_ftrs = self.densenet121.classifier.in_features
+        self.densenet121.classifier = nn.Sequential(
+            nn.Linear(num_ftrs, out_size),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        x = self.densenet121(x)
+        return x
+
 # CNN to produce visual features
-
-
 class EncoderCNN(nn.Module):
-    def __init__(self):
+    def __init__(self, choice='chexnet'):
         super(EncoderCNN, self).__init__()
-        vgg = True
-        if vgg:
-            cnn = models.vgg19(pretrained=False)
+        if choice == 'vgg':
+            cnn = models.vgg19(pretrained=True)
             # self.enc_dim = list(cnn.features.children())[-3].weight.shape[0]  # ?
-        else:
-            cnn = models.resnet152(pretrained=False)
-        modules = list(cnn.children())[:-2]
+            modules = list(cnn.children())[:-2]
+        elif choice == 'resnet':
+            cnn = models.resnet152(pretrained=True)
+            modules = list(cnn.children())[:-2]
+
+        else:  # use a pretrained CheXNet, which has the structure of densenet121
+            cnn = DenseNet121(out_size=14)
+            print("Loading pretrained CheXNet")
+            checkpoint = torch.load("chexnet_model.pth.tar", map_location=torch.device('cpu'))
+            cnn.load_state_dict(checkpoint["state_dict"], strict=False)
+            for param in cnn.parameters():
+                param.requires_grad = False
+
+            modules = list(cnn.densenet121.children())[:-1]
+            modules.append(nn.Conv2d(1024, 512, kernel_size=1, stride=1, padding=0))  # add a Conv layer to maintain output size of 512
+
         self.cnn = nn.Sequential(*modules)
         self.avgpool = torch.nn.AvgPool2d(kernel_size=7, stride=1, padding=0)
 
     def forward(self, x):
         # (batch_size, enc_dim, enc_img_size, enc_img_size)
         visual_features = self.cnn(x) # batch_size x 512 channels x 7 x 7
-        # print('visual feature shape:', visual_features.shape)
 
+        # TODO: this line results in error for decoder when batch size is 1
         avg_features = self.avgpool(visual_features).squeeze() # batch_size x 512 channels
         # print(('avg feature shape:', avg_features.shape))
         return visual_features, avg_features
 
 # MLC for predicting tags and use their embeddings as semantic features
-
-
 class MLC(nn.Module):
     def __init__(self,
                  classes=156,
@@ -101,12 +127,16 @@ if __name__ == '__main__':
     # test encoder
     import sys, os
     sys.path.append(os.path.abspath(os.path.join('../..', '')))
+    sys.path.append('/Users/chenyuzhang/Desktop/JHU-6/DL/MICaptioning')
+
     from utils.tokenizer import Tokenizer
     from utils.dataset import ChestXrayDataSet, collate_fn
     from torchvision import transforms
 
-    caption_dir = '/mnt/d/Github/MICaptioning/iu_xray/iu_xray_captions.json'
-    data_dir = '/mnt/d/Github/MICaptioning/datasets'
+    #caption_dir = '/mnt/d/Github/MICaptioning/iu_xray/iu_xray_captions.json'
+    #data_dir = '/mnt/d/Github/MICaptioning/datasets'
+    caption_dir = '/Users/chenyuzhang/Desktop/JHU-6/DL/MICaptioning/iu_xray/iu_xray_captions.json'
+    data_dir = '/Users/chenyuzhang/Desktop/JHU-6/DL/MICaptioning/datasets'
     tokenizer = Tokenizer(caption_dir)
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -122,10 +152,10 @@ if __name__ == '__main__':
                                                    shuffle=False,
                                                    collate_fn=collate_fn)
     encoder = EncoderCNN()
-    # print(encoder)
+    print(encoder)
     for img, caption, tags_vec in train_dataloader:
         # test encoding img into features
         print(img.shape)
         encoder_out = encoder(img)
+        print(encoder_out[1].shape)
         break
-

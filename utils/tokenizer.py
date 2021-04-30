@@ -26,7 +26,7 @@ class Tokenizer():
         stopwords = set([s[0] for s in vocab_counts.most_common(RM_TOP)])
         self.vocab = set([v for v in set(vocab) if vocab_counts[v] >= MIN_FREQ and v not in stopwords] + 
             ['<bos>'] + ['<eos>'] + ['<pad>'] + ['<unk>'])
-        
+
         self.vocab_size = len(self.vocab)
         self.w2i = {w: i for i, w in enumerate(sorted(self.vocab))}
         self.i2w = {i: w for i, w in enumerate(sorted(self.vocab))}
@@ -34,7 +34,7 @@ class Tokenizer():
         self.eos = self.w2i['<eos>']
         self.pad = self.w2i['<pad>']
         self.unk = self.w2i['<unk>']
-    
+
     def encode(self, input_text):
         """ encode the input using established vocab and dictionary """
         sentences = self.tokenize(input_text)
@@ -47,7 +47,7 @@ class Tokenizer():
                     output.append(self.w2i[tokens])
         output.append(self.eos)
         return output
-         
+
     def decode(self, input_token):
         """ decode the input token (in batch) into words """
         bz, seqlen = input_token.size(0), input_token.size(0)
@@ -72,8 +72,8 @@ class Tokenizer():
             tokens = word_tokenize(sentence)
             examples.append(tokens)
         return examples
-       
-    
+
+
 
 if __name__ == '__main__':  
     # test tokenizer

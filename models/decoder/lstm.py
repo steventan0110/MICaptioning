@@ -29,16 +29,27 @@ class LSTMDecoder(nn.Module):
         self.linear = nn.Linear(hidden_size, vocab_size)
         self.dropout = nn.Dropout(p=dropout_out)
 
-    def forward(self, x, image_feature):
-        embeddings = self.embed(x)
-        # input_token = embeddings.permute(1,0,2)
-        bz, hidden_size = image_feature.size(0), image_feature.size(1)
-        c0 = image_feature.new_full(
-            (self.num_layers, bz, hidden_size),
-            0)
-        h0 = image_feature.unsqueeze(0) #  num_layer x batch_size x hidden_dim
-        output, (state, _) = self.lstm(embeddings, (h0, c0))
-        logits = self.dropout(self.linear(output)) # batch size x seqlen x vocab size
+    # def init_hidden(self, batch_size):
+    #     return (torch.zeros(self.num_layers, batch_size, self.hidden_size), \
+    #         torch.zeros(self.num_layers, batch_size, self.hidden_size))
+
+    def forward(self, caption, image_feature):
+        # embeddings = self.embed(caption)
+        # # input_token = embeddings.permute(1,0,2)
+        # bz, hidden_size = image_feature.size(0), image_feature.size(1)
+        # c0 = image_feature.new_full(
+        #     (self.num_layers, bz, hidden_size),
+        #     0)
+        # h0 = image_feature.unsqueeze(0) #  num_layer x batch_size x hidden_dim
+        # output, (state, _) = self.lstm(embeddings, (h0, c0))
+
+        caption = caption[:, :-1]
+        embeddings = self.embed(caption)
+        batch_size = image_feature.shape[0]
+        image_feature = image_feature.unsqueeze(1)  # img_feat: [4,1,512], emb: [4, seqlen, 512]
+        embeddings = torch.cat((image_feature, embeddings), 1)  # shape: [4, seqlen+1, 512]
+        output, _ = self.lstm(embeddings)  # shape: [4, seqlen+1, vocab_size=2277]; h0 and c0 intialized to 0
+        logits = self.dropout(self.linear(output)) # batch size x seqlen+1 x vocab size
         return logits
 
 
@@ -46,13 +57,17 @@ if __name__ == '__main__':
     # test decoder given encoder output
     import sys, os
     sys.path.append(os.path.abspath(os.path.join('../..', '')))
+    sys.path.append('/Users/chenyuzhang/Desktop/JHU-6/DL/MICaptioning')
+
     from utils.tokenizer import Tokenizer
     from utils.dataset import ChestXrayDataSet, collate_fn
     from torchvision import transforms
     from models.encoder.encoder import EncoderCNN
 
-    caption_dir = '/mnt/d/Github/MICaptioning/iu_xray/iu_xray_captions.json'
-    data_dir = '/mnt/d/Github/MICaptioning/datasets'
+    # caption_dir = '/mnt/d/Github/MICaptioning/iu_xray/iu_xray_captions.json'
+    # data_dir = '/mnt/d/Github/MICaptioning/datasets'
+    caption_dir = '//Users/chenyuzhang/Desktop/JHU-6/DL/MICaptioning/iu_xray/iu_xray_captions.json'
+    data_dir = '/Users/chenyuzhang/Desktop/JHU-6/DL/MICaptioning/datasets'
     tokenizer = Tokenizer(caption_dir)
     transform = transforms.Compose([
         transforms.ToTensor(),

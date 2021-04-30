@@ -77,6 +77,11 @@ class SingleBeamSearchBoard():
 
         self.word_indice += [top_indice.fmod(output_size)]
         self.beam_indice += [top_indice.div(float(output_size)).long()]
+
+        # debug usage:
+        # print(self.word_indice)
+        # print(self.beam_indice)
+        # print()
         # Add results to history boards.
         self.cumulative_probs += [top_log_prob]
         self.masks += [torch.eq(self.word_indice[-1], self.tokenizer.eos)] # Set finish mask if we got EOS.
@@ -91,7 +96,7 @@ class SingleBeamSearchBoard():
             ).contiguous()
      
 
-    def get_n_best(self, n=1, length_penalty=.2):
+    def get_n_best(self, n=1, length_penalty=0):
         sentences, probs, founds = [], [], []
 
         for t in range(len(self.word_indice)):  # for each time-step,
@@ -108,6 +113,7 @@ class SingleBeamSearchBoard():
                     probs += [self.cumulative_probs[-1][b] * self.get_length_penalty(len(self.cumulative_probs),
                                                                                      alpha=length_penalty)]
                     founds += [(t, b)]
+        #print(founds, probs)
       
         # Sort and take n-best.
         sorted_founds_with_probs = sorted(
