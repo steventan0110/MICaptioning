@@ -2,8 +2,6 @@ import torch
 import os
 # train model for 1 epoch
 
-
-
 class Trainer():
     def __init__(self, model, train_dataloader, valid_dataloader, **kwargs):
         self.args = kwargs
@@ -19,7 +17,7 @@ class Trainer():
             max_lr=self.args['learning_rate'], 
             epochs=self.args['max_epoch'], 
             steps_per_epoch=len(self.train_dataloader)) 
-    
+
     def right_shift(self, tokens):
         eos = self.train_dataloader.dataset.tokenizer.eos
         pad = self.train_dataloader.dataset.tokenizer.pad
@@ -60,7 +58,7 @@ class Trainer():
 
         self.model.eval()
         with torch.no_grad():
-            for i, (img, caption) in enumerate(self.valid_dataloader):
+            for i, (img, caption, tags_vec) in enumerate(self.valid_dataloader):
                 img, caption = img.to(self.device), caption.to(self.device)
                 if self.args['arch'] == 'transformer':
                     prev_caption = self.right_shift(caption)
@@ -71,7 +69,7 @@ class Trainer():
                 loss = self.criterion(out.reshape(-1, vocab_size), caption.reshape(-1, 1).squeeze())
                 val_loss += loss
                 val_steps += 1
-                
+
         return train_loss / train_steps, val_loss / val_steps
 
     def save_checkpoint(self, EPOCH, loss, val_loss, PATH):
