@@ -159,4 +159,3 @@ if __name__ == '__main__':
         encoder_out = encoder(img)
         print(encoder_out[1].shape)
         break
-
