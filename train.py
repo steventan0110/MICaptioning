@@ -45,7 +45,7 @@ def main(args):
             model = Transformer(tokenizer.vocab_size, tokenizer.vocab_size, tokenizer.pad, tokenizer.pad, 
             device=torch.device('cpu' if self.args['cpu'] else 'cuda'))
         else:
-            model = EncoderDecoderModel(args.encoder_arch, tokenizer)
+            model = EncoderDecoderModel(args.arch.split('_')[0], tokenizer)
 
         trainer = Trainer(model, train_dataloader, valid_dataloader, **vars(args))
         if args.load_dir:
@@ -66,9 +66,9 @@ def main(args):
                                               batch_size=args.batch_size,
                                               shuffle=False,
                                               collate_fn=collate_fn)
-        
+
         # TODO: load model here once model file is written
-        model = EncoderDecoderModel(args.encoder_arch, tokenizer)
+        model = EncoderDecoderModel(args.arch.split('_')[0], tokenizer)
         model.eval()
         generator = Generator(model, args.load_dir, test_dataloader, tokenizer, **vars(args))
         generator.eval() # print to console the evaluation
@@ -79,7 +79,7 @@ def main(args):
         x = test_dataset[idx]
         img, caption = collate_fn([test_dataset[idx]])
 
-        model = EncoderDecoderModel(args.encoder_arch, tokenizer)
+        model = EncoderDecoderModel(args.arch.split('_')[0], tokenizer)
         tokens = model.inference(img)
         hypo = self.tokenizer.decode(tokens)
         tgt = self.tokenizer.decode(caption)
@@ -95,7 +95,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--save-dir', type=Path)
     parser.add_argument('--load-dir', default=None, type=Path)
     parser.add_argument('--cpu', default=False, action="store_true")
-    parser.add_argument('--encoder-arch', default="chexnet")
+    parser.add_argument('--arch', default="vgg_lstm")
     parser.add_argument('--max-epoch', default=100, type=int)
     parser.add_argument('--batch-size', default=32, type=int)
     parser.add_argument('--learning-rate', '-lr', default=0.001, type=float)
