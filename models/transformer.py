@@ -165,9 +165,16 @@ class Decoder(nn.Module):
 
 
 class PatchEmbedding(nn.Module):
-    def __init__(self, in_channels: int = 3, patch_size: int = 28, emb_size: int = 512, img_size: int = 224):
+    def __init__(
+        self, 
+        in_channels = 3, 
+        patch_size=28, 
+        emb_size= 512, 
+        img_size = 224,
+        device='cpu'
+    ):
+        super(PatchEmbedding, self).__init__()
         self.patch_size = patch_size
-        super().__init__()
         self.projection = nn.Sequential(
             # using a conv layer instead of a linear one -> performance gains
             nn.Conv2d(in_channels, emb_size, kernel_size=patch_size, stride=patch_size),
@@ -220,7 +227,7 @@ class Transformer(nn.Module):
             device,
             max_len
         )
-
+        self.patch_image = PatchEmbedding()
         self.src_pad_idx = src_pad_idx
         self.trg_pad_idx = trg_pad_idx
         self.device = device
@@ -238,8 +245,9 @@ class Transformer(nn.Module):
     
     def forward(self, src, trg):
         # make source img into patches
+        src, trg = src.to(self.device), trg.to(self.device)
         # img (N, channel=3, width=224, width) => (N, #patches, hidden)
-        patches = PatchEmbedding()(src).to(self.device) # (N, #patches, hidden)
+        patches = self.patch_image(src) # (N, #patches, hidden)
         # src_mask = self.make_src_mask(patches) 
         # no padding in source so just a matrix of 1
         src_mask = torch.ones(patches.size(0), 1, 1, patches.size(1)).to(self.device)

@@ -42,8 +42,8 @@ def main(args):
                                               collate_fn=collate_fn)
 
         if args.arch == 'transformer':
-            model = Transformer(tokenizer.vocab_size, tokenizer.vocab_size, tokenizer.pad, tokenizer.pad, 
-            device=torch.device('cpu' if self.args['cpu'] else 'cuda'))
+            model = Transformer(tokenizer.vocab_size, tokenizer.vocab_size, tokenizer.pad, tokenizer.pad, \
+                device=torch.device('cpu' if args.cpu else 'cuda'))
         else:
             model = EncoderDecoderModel(args.arch.split('_')[0], tokenizer)
 
@@ -81,8 +81,8 @@ def main(args):
 
         model = EncoderDecoderModel(args.arch.split('_')[0], tokenizer)
         tokens = model.inference(img)
-        hypo = self.tokenizer.decode(tokens)
-        tgt = self.tokenizer.decode(caption)
+        hypo = model.tokenizer.decode(tokens)
+        tgt = model.tokenizer.decode(caption)
         print('predicted:', hypo)
         print('target:', tgt)
 

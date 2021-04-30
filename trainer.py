@@ -39,7 +39,7 @@ class Trainer():
         train_steps = 0
         val_steps = 0
         self.model.train()
-        for i, (img, caption) in enumerate(self.train_dataloader):
+        for i, (img, caption, tags_vec) in enumerate(self.train_dataloader):
             img, caption = img.to(self.device), caption.to(self.device)
             # need to right shift for transformer architecture
             if self.args['arch'] == 'transformer':
