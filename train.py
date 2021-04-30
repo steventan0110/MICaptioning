@@ -42,7 +42,8 @@ def main(args):
                                               collate_fn=collate_fn)
 
         if args.arch == 'transformer':
-            model = Transformer(tokenizer.vocab_size, tokenizer.vocab_size, tokenizer.pad, tokenizer.pad)
+            model = Transformer(tokenizer.vocab_size, tokenizer.vocab_size, tokenizer.pad, tokenizer.pad, 
+            device=torch.device('cpu' if self.args['cpu'] else 'cuda'))
         else:
             model = EncoderDecoderModel(args.encoder_arch, tokenizer)
 

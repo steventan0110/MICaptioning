@@ -178,7 +178,6 @@ class PatchEmbedding(nn.Module):
 
         
     def forward(self, x):
-        b, _, _, _ = x.shape
         x = self.projection(x)
         # add position embedding
         x += self.positions
@@ -240,7 +239,7 @@ class Transformer(nn.Module):
     def forward(self, src, trg):
         # make source img into patches
         # img (N, channel=3, width=224, width) => (N, #patches, hidden)
-        patches = PatchEmbedding()(src) # (N, #patches, hidden)
+        patches = PatchEmbedding()(src).to(self.device) # (N, #patches, hidden)
         # src_mask = self.make_src_mask(patches) 
         # no padding in source so just a matrix of 1
         src_mask = torch.ones(patches.size(0), 1, 1, patches.size(1)).to(self.device)
@@ -279,7 +278,7 @@ if __name__ == '__main__':
                                                    shuffle=False,
                                                    collate_fn=collate_fn)
 
-    transformer = Transformer(tokenizer.vocab_size, tokenizer.vocab_size, tokenizer.pad, tokenizer.pad)
+    transformer = Transformer(tokenizer.vocab_size, tokenizer.vocab_size, tokenizer.pad, tokenizer.pad, device='cuda')
     # test regular MT transformer
     # src = torch.arange(0,10).view(2,5)
     # tgt = torch.arange(0,8).view(2,4)
