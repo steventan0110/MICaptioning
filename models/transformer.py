@@ -264,8 +264,9 @@ class Transformer(nn.Module):
         is_decoding = img.new_full((bz, 1), 1).bool().squeeze(1)
         for i in range(max_len):
             decoder_out = self.decoder(input_token, encoder_out, None, None)
-            logit = decoder_out[:, -1, :] # padding has weight 0 so remember to diasable it
-            logit[:, 2] = -float('inf')
+            logit = decoder_out[:, -1, :] 
+            # padding has weight 0 so remember to diasable it
+            logit[:, self.tokenizer.pad] = -float('inf')
             new_token = logit.argmax(dim=1).masked_fill_(
                 ~is_decoding,
                 self.tokenizer.pad # pad index
@@ -274,6 +275,7 @@ class Transformer(nn.Module):
             is_decoding = is_decoding * torch.ne(new_token, self.tokenizer.eos)
             if (torch.all(~is_decoding)):
                 break
+            # next step is predicted on all previous output unlike RNN that only needs prev 1
             input_token = torch.cat([input_token, new_token.unsqueeze(1)], dim=1)
         return out
 
