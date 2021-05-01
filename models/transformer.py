@@ -194,10 +194,7 @@ class PatchEmbedding(nn.Module):
 class Transformer(nn.Module):
     def __init__(
         self,
-        src_vocab_size,
-        trg_vocab_size,
-        src_pad_idx,
-        trg_pad_idx,
+        tokenizer,
         embed_size=512,
         num_layers=4,
         forward_expansion=4,
@@ -207,8 +204,9 @@ class Transformer(nn.Module):
         max_len=256,
     ):
         super(Transformer, self).__init__()
+        self.tokenizer = tokenizer
         self.encoder = Encoder(
-            src_vocab_size,
+            tokenizer.vocab_size,
             embed_size,
             num_layers,
             heads,
@@ -218,7 +216,7 @@ class Transformer(nn.Module):
             max_len
         )
         self.decoder = Decoder(
-            trg_vocab_size,
+            tokenizer.vocab_size,
             embed_size,
             num_layers,
             heads,
@@ -228,8 +226,8 @@ class Transformer(nn.Module):
             max_len
         )
         self.patch_image = PatchEmbedding()
-        self.src_pad_idx = src_pad_idx
-        self.trg_pad_idx = trg_pad_idx
+        self.src_pad_idx = self.tokenizer.pad
+        self.trg_pad_idx = self.tokenizer.pad
         self.device = device
 
     def make_src_mask(self, src):
@@ -255,7 +253,29 @@ class Transformer(nn.Module):
         enc_src = self.encoder(patches, src_mask) # (N, src_len, hidden)
         out = self.decoder(trg, enc_src, src_mask, trg_mask)
         return out
-        
+    
+    def inference(self, img):
+        pathches = self.patch_image(img)
+        bz, src_len, embed_size = pathches.shape
+        encoder_out = self.encoder(pathches, None) # no need for mask
+        max_len = 100
+        out = img.new_full((bz, max_len), self.tokenizer.pad).long()
+        input_token = img.new_full((bz, 1), self.tokenizer.eos).long() # start with eos token
+        is_decoding = img.new_full((bz, 1), 1).bool().squeeze(1)
+        for i in range(max_len):
+            decoder_out = self.decoder(input_token, encoder_out, None, None)
+            logit = decoder_out[:, -1, :] # padding has weight 0 so remember to diasable it
+            logit[:, 2] = -float('inf')
+            new_token = logit.argmax(dim=1).masked_fill_(
+                ~is_decoding,
+                self.tokenizer.pad # pad index
+            )
+            out[:, i] = new_token
+            is_decoding = is_decoding * torch.ne(new_token, self.tokenizer.eos)
+            if (torch.all(~is_decoding)):
+                break
+            input_token = torch.cat([input_token, new_token.unsqueeze(1)], dim=1)
+        return out
 
 
 
@@ -286,13 +306,13 @@ if __name__ == '__main__':
                                                    shuffle=False,
                                                    collate_fn=collate_fn)
 
-    transformer = Transformer(tokenizer.vocab_size, tokenizer.vocab_size, tokenizer.pad, tokenizer.pad, device='cuda')
+    transformer = Transformer(tokenizer)
     # test regular MT transformer
     # src = torch.arange(0,10).view(2,5)
     # tgt = torch.arange(0,8).view(2,4)
     # out = transformer(src, tgt)
 
-    for img, caption in train_dataloader:
+    for img, caption, tagvec in train_dataloader:
         out = transformer(img, caption)
         print(out.shape)
         break

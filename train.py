@@ -42,8 +42,7 @@ def main(args):
                                               collate_fn=collate_fn)
 
         if args.arch == 'transformer':
-            model = Transformer(tokenizer.vocab_size, tokenizer.vocab_size, tokenizer.pad, tokenizer.pad, \
-                device=torch.device('cpu' if args.cpu else 'cuda'))
+            model = Transformer(tokenizer, device=torch.device('cpu' if args.cpu else 'cuda'))
         else:
             model = EncoderDecoderModel(args.arch.split('_')[0], tokenizer)
 
@@ -67,8 +66,10 @@ def main(args):
                                               shuffle=False,
                                               collate_fn=collate_fn)
 
-        # TODO: load model here once model file is written
-        model = EncoderDecoderModel(args.arch.split('_')[0], tokenizer)
+        if args.arch == 'transformer':
+            model = Transformer(tokenizer, device=torch.device('cpu' if args.cpu else 'cuda'))
+        else:
+            model = EncoderDecoderModel(args.arch.split('_')[0], tokenizer)
         model.eval()
         generator = Generator(model, args.load_dir, test_dataloader, tokenizer, **vars(args))
         generator.eval() # print to console the evaluation

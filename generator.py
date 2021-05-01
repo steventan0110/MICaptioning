@@ -17,19 +17,14 @@ class Generator():
         # TODO: generate result and compute BLEU score
         tgt = []
         hypo = []
-        # cell and LSTM has to have the same parameter!
-        # print(list(self.model.LSTMCell.named_parameters()))
-        # print(list(self.model.decoder.lstm.named_parameters()))
-    
         scores = []
         for (img, caption, tags_vec) in self.test_dataloader:
             bz = img.size(0)
-            # tokens = self.model.inference(img)
-            tokens, _ = self.model.beam_search(self.beam_size, self.device, SingleBeamSearchBoard, img)
-            tokens = torch.tensor(tokens)
+            tokens = self.model.inference(img)
+            # tokens, _ = self.model.beam_search(self.beam_size, self.device, SingleBeamSearchBoard, img)
+            # tokens = torch.tensor(tokens)
             hypo = self.tokenizer.decode(tokens)
             tgt = self.tokenizer.decode(caption)
-  
             # print('tgt:', tgt)
             # print()
             for i in range(bz):
