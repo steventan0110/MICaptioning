@@ -76,11 +76,26 @@ def main(args):
 
     elif args.mode == 'interactive':
         test_dataset = ChestXrayDataSet(args.data_dir, 'test', tokenizer, transform=valid_transform)
-        idx = input("input test image id:")
-        x = test_dataset[idx]
-        img, caption = collate_fn([test_dataset[idx]])
+        # idx = input("input test image id:")
+        # x = test_dataset[idx]
+        # img, caption, tags_vec = collate_fn([test_dataset[idx]])
+        test_dataloader = torch.utils.data.DataLoader(dataset=test_dataset,
+                                                      batch_size=1,
+                                                      shuffle=False,
+                                                      collate_fn=collate_fn)
+        for img, caption, tags_vec in test_dataloader:
+            if not args.cpu:
+                img = img.cuda()
+                caption = caption.cuda()
+            break
 
         model = EncoderDecoderModel(args.arch.split('_')[0], tokenizer)
+        if not args.cpu:
+            model = model.cuda()
+        if args.load_dir:
+            checkpoint = torch.load(args.load_dir)
+            model.load_state_dict(checkpoint['model_state_dict'])
+
         tokens = model.inference(img)
         hypo = model.tokenizer.decode(tokens)
         tgt = model.tokenizer.decode(caption)

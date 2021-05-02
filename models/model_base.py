@@ -23,7 +23,7 @@ class EncoderDecoderModel(nn.Module):
         return decoder_out
 
     def inference(self, image):
-        _, ip = self.encoder(image)
+        _, ip = self.encoder(image) # avg_features (bz x 512)
         max_len = 100
         hidden = None
         ids_list = []
