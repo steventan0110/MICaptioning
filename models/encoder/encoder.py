@@ -26,6 +26,8 @@ class DenseNet121(nn.Module):
 class EncoderCNN(nn.Module):
     def __init__(self, choice='chexnet'):
         super(EncoderCNN, self).__init__()
+        encoded_image_size = 512
+
         if choice == 'vgg':
             cnn = models.vgg19(pretrained=True)
             # self.enc_dim = list(cnn.features.children())[-3].weight.shape[0]  # ?
@@ -33,6 +35,7 @@ class EncoderCNN(nn.Module):
         elif choice == 'resnet':
             cnn = models.resnet152(pretrained=True)
             modules = list(cnn.children())[:-2]
+            modules.append(nn.Conv2d(2048, encoded_image_size, kernel_size=1, stride=1, padding=0))  # add a Conv layer to maintain output size of 512
 
         else:  # use a pretrained CheXNet, which has the structure of densenet121
             cnn = DenseNet121(out_size=14)
@@ -43,7 +46,7 @@ class EncoderCNN(nn.Module):
                 param.requires_grad = False
 
             modules = list(cnn.densenet121.children())[:-1]
-            modules.append(nn.Conv2d(1024, 512, kernel_size=1, stride=1, padding=0))  # add a Conv layer to maintain output size of 512
+            modules.append(nn.Conv2d(1024, encoded_image_size, kernel_size=1, stride=1, padding=0))  # add a Conv layer to maintain output size of 512
 
         self.cnn = nn.Sequential(*modules)
         self.avgpool = torch.nn.AvgPool2d(kernel_size=7, stride=1, padding=0)
@@ -151,7 +154,7 @@ if __name__ == '__main__':
                                                    batch_size=4,
                                                    shuffle=False,
                                                    collate_fn=collate_fn)
-    encoder = EncoderCNN()
+    encoder = EncoderCNN('resnet')
     print(encoder)
     for img, caption, tags_vec in train_dataloader:
         # test encoding img into features
