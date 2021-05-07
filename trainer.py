@@ -13,6 +13,7 @@ class Trainer():
         self.tl_scale = tl_scale
         # TODO: constructing optimizer, scheduler can be modularized for different args passed in
         self.criterion = torch.nn.CrossEntropyLoss()
+        self.kldiv = torch.nn.KLDivLoss()
         self.optimizer = optimizer = torch.optim.Adam(self.model.parameters(), lr=self.args['learning_rate'])
         self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
             self.optimizer, 
@@ -52,7 +53,7 @@ class Trainer():
             # need to flatten the sentence before computing crossentropy loss
             vocab_size = out.size(2)
             cap_loss = self.criterion(out.reshape(-1, vocab_size), caption.reshape(-1, 1).squeeze())
-            tag_loss = self.criterion(tags_pred, tags_distrib)
+            tag_loss = self.kldiv(tags_pred, tags_distrib)
             loss = cap_loss + self.tl_scale * tag_loss
             train_loss += loss
             # backward, might want to control the update step size
@@ -75,7 +76,7 @@ class Trainer():
                 out, tags_pred = self.model(img, prev_caption)
                 vocab_size = out.size(2)
                 cap_loss = self.criterion(out.reshape(-1, vocab_size), caption.reshape(-1, 1).squeeze())
-                tag_loss = self.criterion(tags_pred, tags_distrib)
+                tag_loss = self.kldiv(tags_pred, tags_distrib)
                 loss = cap_loss + self.tl_scale * tag_loss
                 val_loss += loss
                 val_steps += 1
