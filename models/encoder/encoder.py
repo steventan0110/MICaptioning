@@ -64,9 +64,9 @@ class EncoderCNN(nn.Module):
 # MLC for predicting tags and use their embeddings as semantic features
 class MLC(nn.Module):
     def __init__(self,
-                 classes=156,
+                 classes=210, # number of tags
                  sementic_features_dim=512,
-                 fc_in_features=2048,
+                 fc_in_features=512,
                  k=10):
         super(MLC, self).__init__()
         self.classifier = nn.Linear(
@@ -81,7 +81,7 @@ class MLC(nn.Module):
         self.classifier.bias.data.fill_(0)
 
     def forward(self, avg_features):
-        tags = self.softmax(self.classifier(avg_features))
+        tags = self.softmax(self.classifier(avg_features)) # distribution of tags
         semantic_features = self.embed(torch.topk(tags, self.k)[1])
         return tags, semantic_features
 
