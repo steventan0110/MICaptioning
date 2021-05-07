@@ -4,7 +4,7 @@ import torch.nn.functional as F
 # train model for 1 epoch
 
 class Trainer():
-    def __init__(self, model, train_dataloader, valid_dataloader, tl_scale=1, **kwargs):
+    def __init__(self, model, train_dataloader, valid_dataloader, tl_scale=10, **kwargs):
         self.args = kwargs
         self.device = torch.device('cpu' if self.args['cpu'] else 'cuda')
         self.model = model.to(self.device)
@@ -13,7 +13,7 @@ class Trainer():
         self.tl_scale = tl_scale
         # TODO: constructing optimizer, scheduler can be modularized for different args passed in
         self.criterion = torch.nn.CrossEntropyLoss()
-        self.kldiv = torch.nn.KLDivLoss()
+        self.kldiv = torch.nn.KLDivLoss(reduce='batchmean')
         self.optimizer = optimizer = torch.optim.Adam(self.model.parameters(), lr=self.args['learning_rate'])
         self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
             self.optimizer, 
@@ -42,7 +42,7 @@ class Trainer():
         self.model.train()
         for i, (img, caption, tags_vec) in enumerate(self.train_dataloader):
             img, caption, tags_vec = img.to(self.device), caption.to(self.device), tags_vec.to(self.device)
-            tags_distrib = F.normalize(tags_vec, dim=1)
+            tags_distrib = F.normalize(tags_vec, dim=1).float()
             # need to right shift for transformer architecture
             if self.args['arch'] == 'transformer':
                 prev_caption = self.right_shift(caption)
@@ -67,7 +67,7 @@ class Trainer():
         with torch.no_grad():
             for i, (img, caption, tags_vec) in enumerate(self.valid_dataloader):
                 img, caption, tags_vec = img.to(self.device), caption.to(self.device), tags_vec.to(self.device)
-                tags_distrib = F.normalize(tags_vec, dim=1)
+                tags_distrib = F.normalize(tags_vec, dim=1).float()
                 if self.args['arch'] == 'transformer':
                     prev_caption = self.right_shift(caption)
                 else:

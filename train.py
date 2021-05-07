@@ -87,7 +87,6 @@ def main(args):
             if not args.cpu:
                 img = img.cuda()
                 caption = caption.cuda()
-            break
 
         model = EncoderDecoderModel(args.arch.split('_')[0], tokenizer)
         if not args.cpu:
@@ -101,6 +100,12 @@ def main(args):
         tgt = model.tokenizer.decode(caption)
         print('predicted:', hypo)
         print('target:', tgt)
+        temp = tags_vec.long().numpy().tolist()[0]
+        indices = [i for i in range(len(temp)) if temp[i] > 0]
+        tags = model.tag_transform.array2tags(indices)
+        tags_pred = model.tag_inference(img, 4)
+        print('predicted tag:', tags_pred)
+        print('ground truth tag:', tags)
 
 
 def parse_args() -> argparse.Namespace:

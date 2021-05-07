@@ -32,7 +32,7 @@ class EncoderDecoderModel(nn.Module):
         '''
         _, encoder_out = self.encoder(image)
         tags_vec, _ = self.mlc(encoder_out)
-        indices = torch.topk(tags_vec, k)[1].numpy().tolist()
+        indices = torch.topk(tags_vec, k)[1].long().numpy().tolist()[0]
         tags = self.tag_transform.array2tags(indices)
         return tags
 
