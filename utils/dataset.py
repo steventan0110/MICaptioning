@@ -44,10 +44,10 @@ class ChestXrayDataSet(Dataset):
             autotags = f.read()
         
         out_img = self.transform(img)
-        tags_vec = np.array(tags2array(autotags))
+        tags_vec = torch.tensor(tags2array(autotags), dtype=float)
         # sample = {'img': out_img[0, :, :].unsqueeze(0), 'caption': caption}
         # 1 channel img: return out_img[0, :, :].unsqueeze(0), self.tokenizer.encode(caption), self.tokenizer.pad
-        return out_img, self.tokenizer.encode(caption), self.tokenizer.pad, tags_vec
+        return out_img, self.tokenizer.encode(caption), tags_vec, self.tokenizer.pad
 
     def __len__(self):
         return len(next(os.walk(self.data_dir))[1])
@@ -55,9 +55,10 @@ class ChestXrayDataSet(Dataset):
 
 # need collate function to pad the sentences
 def collate_fn(data):
-    images, captions, pads, tags_vec = zip(*data)
+    images, captions, tags_vec, pads = zip(*data)
     pad_index = pads[0]
     image = torch.stack(images, 0)
+    tv = torch.stack(tags_vec, 0)
     bz = len(captions)
     maxlen = max([len(sent) for sent in captions])
     caption = image.new_full(
@@ -70,7 +71,7 @@ def collate_fn(data):
         token = torch.tensor(captions[i])
         caption[i, :] = torch.cat((token, padding), dim=0)
 
-    return image, caption.long(), tags_vec
+    return image, caption.long(), tv
 
 
 def get_loader(input_dir,

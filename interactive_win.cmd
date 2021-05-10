@@ -1,0 +1,1 @@
+python train.py --mode interactive  --caption-dir iu_xray/iu_xray_captions.json --data-dir datasets --load-dir checkpoints/tl10/checkpoint5.pt --cpu

@@ -1,0 +1,1 @@
+python train.py --mode train  --caption-dir iu_xray/iu_xray_captions.json --data-dir datasets --max-epoch 51  --log-interval 5 --batch-size 32 -lr 0.01 --save-dir checkpoints/tl10

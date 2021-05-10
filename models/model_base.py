@@ -5,7 +5,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from models.decoder.lstm import LSTMDecoder
-from models.encoder.encoder import EncoderCNN
+from models.encoder.encoder import EncoderCNN, MLC
+from utils.tag_utils import TagTransform
 # used for local tesing:
 # from decoder.lstm import LSTMDecoder
 # from encoder.encoder import EncoderCNN
@@ -14,16 +15,29 @@ class EncoderDecoderModel(nn.Module):
     def __init__(self, choice, tokenizer):
         super().__init__()
         self.encoder = EncoderCNN(choice)
+        self.mlc = MLC()
         self.decoder = LSTMDecoder(tokenizer)
         self.tokenizer = tokenizer
+        self.tag_transform = TagTransform()
 
     def forward(self, image, caption, **kwargs):
         _, encoder_out = self.encoder(image, **kwargs)
+        tags, semantic_features = self.mlc(encoder_out, **kwargs)
         decoder_out = self.decoder(caption, encoder_out, **kwargs)
-        return decoder_out
+        return decoder_out, tags
+
+    def tag_inference(self, image, k):
+        '''
+        k: number of tags to generate
+        '''
+        _, encoder_out = self.encoder(image)
+        tags_vec, _ = self.mlc(encoder_out)
+        indices = torch.topk(tags_vec, k)[1].long().numpy().tolist()[0]
+        tags = self.tag_transform.array2tags(indices)
+        return tags
 
     def inference(self, image):
-        _, ip = self.encoder(image)
+        _, ip = self.encoder(image) # avg_features (bz x 512)
         max_len = 100
         hidden = None
         ids_list = []

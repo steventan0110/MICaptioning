@@ -55,17 +55,21 @@ class EncoderCNN(nn.Module):
         # (batch_size, enc_dim, enc_img_size, enc_img_size)
         visual_features = self.cnn(x) # batch_size x 512 channels x 7 x 7
 
-        # TODO: this line results in error for decoder when batch size is 1
         avg_features = self.avgpool(visual_features).squeeze() # batch_size x 512 channels
         # print(('avg feature shape:', avg_features.shape))
+
+        # fix error for decoder when batch size is 1
+        if avg_features.size() == torch.Size([512]):
+            avg_features = avg_features.unsqueeze(0)
+        
         return visual_features, avg_features
 
 # MLC for predicting tags and use their embeddings as semantic features
 class MLC(nn.Module):
     def __init__(self,
-                 classes=156,
+                 classes=210, # number of tags
                  sementic_features_dim=512,
-                 fc_in_features=2048,
+                 fc_in_features=512,
                  k=10):
         super(MLC, self).__init__()
         self.classifier = nn.Linear(
@@ -80,7 +84,7 @@ class MLC(nn.Module):
         self.classifier.bias.data.fill_(0)
 
     def forward(self, avg_features):
-        tags = self.softmax(self.classifier(avg_features))
+        tags = self.softmax(self.classifier(avg_features)) # distribution of tags
         semantic_features = self.embed(torch.topk(tags, self.k)[1])
         return tags, semantic_features
 
